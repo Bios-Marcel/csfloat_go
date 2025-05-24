@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Bios-Marcel/csfloat_go/csfloat"
+	csfloat "github.com/Bios-Marcel/csfloat_go"
 	"github.com/stretchr/testify/assert"
 )
 

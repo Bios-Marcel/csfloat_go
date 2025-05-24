@@ -1,4 +1,4 @@
-module github.com/Bios-Marcel/csfloat_go/csfloat
+module github.com/Bios-Marcel/csfloat_go
 
 go 1.24.2
 
