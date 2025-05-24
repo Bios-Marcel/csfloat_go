@@ -1,9 +1,11 @@
 package csfloat
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -143,7 +145,7 @@ type Me struct {
 func (api *CSFloat) Me(apiKey string) (*Me, error) {
 	request, err := http.NewRequest(
 		http.MethodGet,
-		fmt.Sprintf("https://csfloat.com/api/v1/me"),
+		"https://csfloat.com/api/v1/me",
 		nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
@@ -161,4 +163,66 @@ func (api *CSFloat) Me(apiKey string) (*Me, error) {
 		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
 	return &me, nil
+}
+
+func (api *CSFloat) Unlist(apiKey, listingId string) error {
+	request, err := http.NewRequest(
+		http.MethodGet,
+		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
+		nil)
+	if err != nil {
+		return fmt.Errorf("error creating request: %w", err)
+	}
+
+	request.Header.Set("Authorization", apiKey)
+
+	response, err := api.httpClient.Do(request)
+	if err != nil {
+		return fmt.Errorf("error sending request: %w", err)
+	}
+
+	// FIXME Get body?
+	if response.StatusCode != 200 {
+		return fmt.Errorf("invalid status code: %d", response.StatusCode)
+	}
+
+	return nil
+}
+
+type ListRequest struct {
+	AssetId     string      `json:"asset_id"`
+	Price       uint        `json:"price"`
+	AuctionType AuctionType `json:"type"`
+}
+
+func (api *CSFloat) List(apiKey string, payload ListRequest) error {
+	var buffer bytes.Buffer
+	if err := json.NewEncoder(&buffer).Encode(payload); err != nil {
+		return fmt.Errorf("error encoding payload: %w", err)
+	}
+
+	request, err := http.NewRequest(
+		http.MethodPost,
+		"https://csfloat.com/api/v1/listings",
+		&buffer)
+
+	request.Header.Set("Authorization", apiKey)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Content-Length", strconv.Itoa(buffer.Len()))
+
+	if err != nil {
+		return fmt.Errorf("error creating request: %w", err)
+	}
+
+	response, err := api.httpClient.Do(request)
+	if err != nil {
+		return fmt.Errorf("error sending request: %w", err)
+	}
+
+	// FIXME Get body?
+	if response.StatusCode != 200 {
+		return fmt.Errorf("invalid status code: %d", response.StatusCode)
+	}
+
+	return nil
 }
