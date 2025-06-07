@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -96,12 +97,24 @@ func (api *CSFloat) Stall(apiKey, steamId string) (*Stall, error) {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
+	if response.StatusCode > 200 {
+		return nil, fmt.Errorf("bad response: %d: %s", response.StatusCode, mustString(response))
+	}
+
 	var stall Stall
 	if err := json.NewDecoder(response.Body).Decode(&stall); err != nil {
 		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
 
 	return &stall, nil
+}
+
+func mustString(response *http.Response) string {
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
 }
 
 func (api *CSFloat) Inventory(apiKey string) ([]Item, error) {
@@ -167,7 +180,7 @@ func (api *CSFloat) Me(apiKey string) (*Me, error) {
 
 func (api *CSFloat) Unlist(apiKey, listingId string) error {
 	request, err := http.NewRequest(
-		http.MethodGet,
+		http.MethodDelete,
 		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
 		nil)
 	if err != nil {
