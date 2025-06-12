@@ -6,28 +6,30 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
-	"time"
+
+	"github.com/Bios-Marcel/csfloat_go/ratelimit"
 )
 
 // FIXME Use fee from /me?
 const Fee float64 = 2
 
 type CSFloat struct {
-	httpClient *http.Client
+	httpClient *ratelimit.RateLimitedClient
 }
 
 func New() *CSFloat {
 	client := http.Client{}
 	// FIXME Set timeout params?
 	return &CSFloat{
-		httpClient: &client,
+		httpClient: ratelimit.New(&client),
 	}
 }
 
 type Stall struct {
-	Items []StallItem `json:"data"`
-	Count int         `json:"total_count"`
+	Items []ListedItem `json:"data"`
+	Count int          `json:"total_count"`
 }
 
 type AuctionType string
@@ -58,33 +60,72 @@ const (
 	FactoryNew    WearName = "Factory New"
 )
 
-type Item struct {
-	ID     string  `json:"asset_id"`
-	Float  float64 `json:"float_value"`
-	Rarity Rarity  `json:"rarity"`
-
-	// FIXME There's no int value, just strings, which are potentially
-	// translated. BUT, we can just set a hardcoded language in our requests.
-	WearName  WearName `json:"wear_name"`
-	ListingId string   `json:"listing_id"`
+type Reference struct {
+	BasePrice      uint `json:"base_price"`
+	PredictedPrice uint `json:"predicted_price"`
+	Quantity       uint `json:"quantity"`
 }
 
-type StallItem struct {
-	ID          string      `json:"id"`
-	Watchers    uint        `json:"watchers"`
-	Price       uint        `json:"price"`
-	AuctionType AuctionType `json:"type"`
-	CreatedAt   time.Time   `json:"created_at"`
-	Item        Item        `json:"item"`
-	// FIXME Reference
+type ListedItem struct {
+	ID        string    `json:"id"`
+	Price     uint      `json:"price"`
+	Item      Item      `json:"item"`
+	Reference Reference `json:"reference"`
+}
+
+type Item struct {
+	ID         string  `json:"asset_id"`
+	Float      float64 `json:"float_value"`
+	Rarity     Rarity  `json:"rarity"`
+	IsSouvenir bool    `json:"is_souvenir"`
+}
+
+type listingsResponse struct {
+	Data []ListedItem `json:"data"`
+}
+type ListingsRequest struct {
+	MinPrice uint
+	MaxPrice uint
+	MaxFloat float32
+}
+
+func (api *CSFloat) Listings(apiKey string, query ListingsRequest) ([]ListedItem, error) {
+	endpoint := "https://csfloat.com/api/v1/listings"
+	request, err := http.NewRequest(
+		http.MethodGet,
+		endpoint,
+		nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	request.Form = url.Values{}
+	request.Form.Set("type", "buy_now")
+	request.Form.Set("sort_by", "highest_discount")
+	request.Form.Set("limit", "40")
+	request.Form.Set("min_price", fmt.Sprintf("%d", query.MinPrice))
+	request.Form.Set("max_price", fmt.Sprintf("%d", query.MaxPrice))
+	request.Form.Set("max_float", fmt.Sprintf("%f", query.MaxFloat))
+
+	request.Header.Set("Authorization", apiKey)
+
+	response, err := api.httpClient.DoWait(endpoint+apiKey, request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+
+	var result listingsResponse
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
+	}
+	return result.Data, nil
 }
 
 func (api *CSFloat) Stall(apiKey, steamId string) (*Stall, error) {
+	endpoint := fmt.Sprintf("https://csfloat.com/api/v1/users/%s/stall", steamId)
 	request, err := http.NewRequest(
 		http.MethodGet,
-		// FIXME Adjustable limit
-		// FIXME Paging?
-		fmt.Sprintf("https://csfloat.com/api/v1/users/%s/stall?limit=40", steamId),
+		endpoint+"?limit=40",
 		nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
@@ -92,7 +133,7 @@ func (api *CSFloat) Stall(apiKey, steamId string) (*Stall, error) {
 
 	request.Header.Set("Authorization", apiKey)
 
-	response, err := api.httpClient.Do(request)
+	response, err := api.httpClient.Do(endpoint+apiKey, request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -118,9 +159,10 @@ func mustString(response *http.Response) string {
 }
 
 func (api *CSFloat) Inventory(apiKey string) ([]Item, error) {
+	endpoint := "https://csfloat.com/api/v1/me/inventory"
 	request, err := http.NewRequest(
 		http.MethodGet,
-		fmt.Sprintf("https://csfloat.com/api/v1/me/inventory"),
+		endpoint,
 		nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
@@ -128,7 +170,7 @@ func (api *CSFloat) Inventory(apiKey string) ([]Item, error) {
 
 	request.Header.Set("Authorization", apiKey)
 
-	response, err := api.httpClient.Do(request)
+	response, err := api.httpClient.Do(endpoint+apiKey, request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -156,9 +198,10 @@ type Me struct {
 }
 
 func (api *CSFloat) Me(apiKey string) (*Me, error) {
+	endpoint := "https://csfloat.com/api/v1/me"
 	request, err := http.NewRequest(
 		http.MethodGet,
-		"https://csfloat.com/api/v1/me",
+		endpoint,
 		nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
@@ -166,7 +209,7 @@ func (api *CSFloat) Me(apiKey string) (*Me, error) {
 
 	request.Header.Set("Authorization", apiKey)
 
-	response, err := api.httpClient.Do(request)
+	response, err := api.httpClient.Do(endpoint+apiKey, request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -179,9 +222,10 @@ func (api *CSFloat) Me(apiKey string) (*Me, error) {
 }
 
 func (api *CSFloat) Unlist(apiKey, listingId string) error {
+	endpoint := "https://csfloat.com/api/v1/listings"
 	request, err := http.NewRequest(
 		http.MethodDelete,
-		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
+		fmt.Sprintf("%s/%s", endpoint, listingId),
 		nil)
 	if err != nil {
 		return fmt.Errorf("error creating request: %w", err)
@@ -189,7 +233,7 @@ func (api *CSFloat) Unlist(apiKey, listingId string) error {
 
 	request.Header.Set("Authorization", apiKey)
 
-	response, err := api.httpClient.Do(request)
+	response, err := api.httpClient.Do(endpoint+apiKey, request)
 	if err != nil {
 		return fmt.Errorf("error sending request: %w", err)
 	}
@@ -214,9 +258,10 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) error {
 		return fmt.Errorf("error encoding payload: %w", err)
 	}
 
+	endpoint := "https://csfloat.com/api/v1/listings"
 	request, err := http.NewRequest(
 		http.MethodPost,
-		"https://csfloat.com/api/v1/listings",
+		endpoint,
 		&buffer)
 
 	request.Header.Set("Authorization", apiKey)
@@ -227,7 +272,7 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) error {
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	response, err := api.httpClient.Do(request)
+	response, err := api.httpClient.Do(endpoint+apiKey, request)
 	if err != nil {
 		return fmt.Errorf("error sending request: %w", err)
 	}

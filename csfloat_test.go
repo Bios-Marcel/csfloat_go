@@ -24,8 +24,8 @@ func Test_Inventory(t *testing.T) {
 	api := csfloat.New()
 
 	items, err := api.Inventory(apiKey)
-	t.Log(items)
 	if ass.NoError(err) {
+		t.Log(items)
 		ass.NotEmpty(items)
 	}
 }
@@ -35,8 +35,19 @@ func Test_Stall(t *testing.T) {
 	api := csfloat.New()
 
 	items, err := api.Stall(apiKey, me().User.SteamId)
-	t.Log(items)
 	if ass.NoError(err) {
+		t.Log(items)
+		ass.NotEmpty(items)
+	}
+}
+
+func Test_Listings(t *testing.T) {
+	ass := assert.New(t)
+	api := csfloat.New()
+
+	items, err := api.Listings(apiKey, csfloat.ListingsRequest{})
+	if ass.NoError(err) {
+		t.Log(items)
 		ass.NotEmpty(items)
 	}
 }
