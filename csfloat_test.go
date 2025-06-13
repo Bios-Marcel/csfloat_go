@@ -1,6 +1,7 @@
 package csfloat_test
 
 import (
+	"encoding/json"
 	"os"
 	"sync"
 	"testing"
@@ -8,6 +9,16 @@ import (
 	csfloat "github.com/Bios-Marcel/csfloat_go"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestJsonEncoder(t *testing.T) {
+	b := csfloat.ListRequest{
+		BuyNowRequest: &csfloat.BuyNowRequest{
+			Price: 5,
+		},
+	}
+	x, _ := json.MarshalIndent(b, "", "  ")
+	t.Log(string(x))
+}
 
 var apiKey = os.Getenv("CSFLOAT_API_KEY")
 var me = sync.OnceValue(func() *csfloat.Me {

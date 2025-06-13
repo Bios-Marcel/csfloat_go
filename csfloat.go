@@ -35,7 +35,8 @@ type Stall struct {
 type AuctionType string
 
 const (
-	BuyNow AuctionType = "buy_now"
+	BuyNow  AuctionType = "buy_now"
+	Auction AuctionType = "auction"
 )
 
 type Rarity uint8
@@ -67,10 +68,14 @@ type Reference struct {
 }
 
 type ListedItem struct {
-	ID        string    `json:"id"`
-	Price     uint      `json:"price"`
-	Item      Item      `json:"item"`
-	Reference Reference `json:"reference"`
+	ID               string      `json:"id"`
+	Price            uint        `json:"price"`
+	Item             Item        `json:"item"`
+	Reference        Reference   `json:"reference"`
+	Type             AuctionType `json:"type"`
+	Description      string      `json:"description"`
+	Private          bool        `json:"private"`
+	MaxOfferDiscount uint        `json:"max_offer_discount"`
 }
 
 type Item struct {
@@ -246,13 +251,11 @@ func (api *CSFloat) Unlist(apiKey, listingId string) error {
 	return nil
 }
 
-type ListRequest struct {
-	AssetId     string      `json:"asset_id"`
-	Price       uint        `json:"price"`
-	AuctionType AuctionType `json:"type"`
+type UpdateListingRequest struct {
+	MaxOfferDiscount uint `json:"max_offer_discount"`
 }
 
-func (api *CSFloat) List(apiKey string, payload ListRequest) error {
+func (api *CSFloat) UpdateListing(apiKey, id string, payload UpdateListingRequest) error {
 	var buffer bytes.Buffer
 	if err := json.NewEncoder(&buffer).Encode(payload); err != nil {
 		return fmt.Errorf("error encoding payload: %w", err)
@@ -260,8 +263,8 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) error {
 
 	endpoint := "https://csfloat.com/api/v1/listings"
 	request, err := http.NewRequest(
-		http.MethodPost,
-		endpoint,
+		http.MethodPatch,
+		fmt.Sprintf("%s/%s", endpoint, id),
 		&buffer)
 
 	request.Header.Set("Authorization", apiKey)
@@ -277,10 +280,65 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) error {
 		return fmt.Errorf("error sending request: %w", err)
 	}
 
-	// FIXME Get body?
 	if response.StatusCode != 200 {
 		return fmt.Errorf("invalid status code: %d", response.StatusCode)
 	}
 
 	return nil
+}
+
+type BuyNowRequest struct {
+	Price uint `json:"price,omitempty"`
+}
+
+type AuctionRequest struct {
+	DurationDays uint `json:"duration_days,omitempty"`
+	ReservePrice uint `json:"reserve_price,omitempty"`
+}
+
+type ListRequest struct {
+	*BuyNowRequest  `json:",omitempty"`
+	*AuctionRequest `json:",omitempty"`
+
+	AssetId     string      `json:"asset_id"`
+	AuctionType AuctionType `json:"type"`
+	Description string      `json:"description"`
+}
+
+func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListedItem, error) {
+	var buffer bytes.Buffer
+	if err := json.NewEncoder(&buffer).Encode(payload); err != nil {
+		return nil, fmt.Errorf("error encoding payload: %w", err)
+	}
+
+	endpoint := "https://csfloat.com/api/v1/listings"
+	request, err := http.NewRequest(
+		http.MethodPost,
+		endpoint,
+		&buffer)
+
+	request.Header.Set("Authorization", apiKey)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Content-Length", strconv.Itoa(buffer.Len()))
+
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	response, err := api.httpClient.Do(endpoint+apiKey, request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+
+	// FIXME Get body?
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf("invalid status code: %d", response.StatusCode)
+	}
+
+	var result ListedItem
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error decoding response, item was relisted: %w", err)
+	}
+
+	return &result, nil
 }
