@@ -104,13 +104,14 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) ([]ListedItem
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 
-	request.Form = url.Values{}
-	request.Form.Set("type", "buy_now")
-	request.Form.Set("sort_by", "highest_discount")
-	request.Form.Set("limit", "40")
-	request.Form.Set("min_price", fmt.Sprintf("%d", query.MinPrice))
-	request.Form.Set("max_price", fmt.Sprintf("%d", query.MaxPrice))
-	request.Form.Set("max_float", fmt.Sprintf("%f", query.MaxFloat))
+	form := url.Values{}
+	form.Set("type", "buy_now")
+	form.Set("sort_by", "highest_discount")
+	form.Set("limit", "40")
+	form.Set("min_price", fmt.Sprintf("%d", query.MinPrice))
+	form.Set("max_price", fmt.Sprintf("%d", query.MaxPrice))
+	form.Set("max_float", fmt.Sprintf("%f", query.MaxFloat))
+	request.URL.RawQuery = form.Encode()
 
 	request.Header.Set("Authorization", apiKey)
 
@@ -343,10 +344,22 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListedItem, error
 	return &result, nil
 }
 
+type TradeState string
+
+const (
+	Verified TradeState = "verified"
+	// Cancelled means the buyer decided not to buy afterall.
+	Cancelled TradeState = "cancelled"
+	// Failed means the buyer failed to accept
+	Failed TradeState = "cancelled"
+)
+
 type Trade struct {
+	ID string `json:"id"`
 	// BuyerId is the steam ID, which can be your own ID if you are the buyer.
 	BuyerId  string     `json:"buyer_id"`
 	Contract ListedItem `json:"item"`
+	State    TradeState `json:"state"`
 }
 
 type TradesResponse struct {
@@ -361,7 +374,7 @@ type TradesRequest struct {
 	Limit uint `json:"limit"`
 }
 
-func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*ListedItem, error) {
+func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesResponse, error) {
 	endpoint := "https://csfloat.com/api/v1/me/trades"
 	request, err := http.NewRequest(
 		http.MethodGet,
@@ -375,9 +388,10 @@ func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*ListedItem, e
 		payload.Limit = 100
 	}
 
-	request.Form = url.Values{}
-	request.Form.Set("page", strconv.FormatUint(10, int(payload.Page)))
-	request.Form.Set("limit", strconv.FormatUint(10, int(payload.Limit)))
+	form := url.Values{}
+	form.Set("page", strconv.FormatUint(uint64(payload.Page), 10))
+	form.Set("limit", strconv.FormatUint(uint64(payload.Limit), 10))
+	request.URL.RawQuery = form.Encode()
 
 	request.Header.Set("Authorization", apiKey)
 
@@ -386,9 +400,13 @@ func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*ListedItem, e
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	var result listingsResponse
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid return code: %d", response.StatusCode)
+	}
+
+	var result TradesResponse
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
-	return result.Data, nil
+	return &result, nil
 }
