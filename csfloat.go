@@ -342,3 +342,53 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListedItem, error
 
 	return &result, nil
 }
+
+type Trade struct {
+	// BuyerId is the steam ID, which can be your own ID if you are the buyer.
+	BuyerId  string     `json:"buyer_id"`
+	Contract ListedItem `json:"item"`
+}
+
+type TradesResponse struct {
+	Trades []Trade `json:"trades"`
+	Count  uint    `json:"count"`
+}
+
+type TradesRequest struct {
+	// Page, default 0 (latest)
+	Page uint `json:"page"`
+	// Limit, default 100
+	Limit uint `json:"limit"`
+}
+
+func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*ListedItem, error) {
+	endpoint := "https://csfloat.com/api/v1/me/trades"
+	request, err := http.NewRequest(
+		http.MethodGet,
+		endpoint,
+		nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	if payload.Limit == 0 {
+		payload.Limit = 100
+	}
+
+	request.Form = url.Values{}
+	request.Form.Set("page", strconv.FormatUint(10, int(payload.Page)))
+	request.Form.Set("limit", strconv.FormatUint(10, int(payload.Limit)))
+
+	request.Header.Set("Authorization", apiKey)
+
+	response, err := api.httpClient.DoWait(endpoint+apiKey, request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+
+	var result listingsResponse
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
+	}
+	return result.Data, nil
+}
