@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/Bios-Marcel/csfloat_go/ratelimit"
 )
@@ -79,10 +80,11 @@ type ListedItem struct {
 }
 
 type Item struct {
-	ID         string  `json:"asset_id"`
-	Float      float64 `json:"float_value"`
-	Rarity     Rarity  `json:"rarity"`
-	IsSouvenir bool    `json:"is_souvenir"`
+	ID             string  `json:"asset_id"`
+	Float          float64 `json:"float_value"`
+	Rarity         Rarity  `json:"rarity"`
+	IsSouvenir     bool    `json:"is_souvenir"`
+	MarketHashName string  `json:"market_hash_name"`
 }
 
 type listingsResponse struct {
@@ -357,9 +359,10 @@ const (
 type Trade struct {
 	ID string `json:"id"`
 	// BuyerId is the steam ID, which can be your own ID if you are the buyer.
-	BuyerId  string     `json:"buyer_id"`
-	Contract ListedItem `json:"item"`
-	State    TradeState `json:"state"`
+	BuyerId    string     `json:"buyer_id"`
+	Contract   ListedItem `json:"contract"`
+	VerifiedAt time.Time  `json:"verified_at"`
+	State      TradeState `json:"state"`
 }
 
 type TradesResponse struct {
