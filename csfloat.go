@@ -79,6 +79,11 @@ type ListedItem struct {
 	MaxOfferDiscount uint        `json:"max_offer_discount"`
 }
 
+type InventoryItem struct {
+	Item
+	Reference Reference `json:"reference"`
+}
+
 type Item struct {
 	ID             string  `json:"asset_id"`
 	Float          float64 `json:"float_value"`
@@ -166,7 +171,7 @@ func mustString(response *http.Response) string {
 	return string(b)
 }
 
-func (api *CSFloat) Inventory(apiKey string) ([]Item, error) {
+func (api *CSFloat) Inventory(apiKey string) ([]InventoryItem, error) {
 	endpoint := "https://csfloat.com/api/v1/me/inventory"
 	request, err := http.NewRequest(
 		http.MethodGet,
@@ -187,7 +192,7 @@ func (api *CSFloat) Inventory(apiKey string) ([]Item, error) {
 	// tradeable will always be 1, since steam does not shot untradable items
 	// anymore. Items with a `listing_id` are already in your stall.
 
-	var items []Item
+	var items []InventoryItem
 	if err := json.NewDecoder(response.Body).Decode(&items); err != nil {
 		return nil, fmt.Errorf("error decoding response: %w", err)
 	}

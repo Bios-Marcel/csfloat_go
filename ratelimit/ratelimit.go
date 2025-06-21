@@ -32,12 +32,18 @@ func (r *RateLimitedClient) doNow(key string, request *http.Request) (*http.Resp
 		if err != nil {
 			return nil, err
 		}
+
+		// Ratelimit reached
+		if remainingInt <= 0 {
+			return response, nil
+		}
+
 		resetInt, err := strconv.Atoi(reset)
 		if err != nil {
 			return nil, err
 		}
 		resetTime := time.Unix(int64(resetInt), 0)
-		duration := (resetTime.Sub(now) - (5 * time.Second)) / time.Duration(remainingInt)
+		duration := resetTime.Sub(now) / time.Duration(remainingInt)
 		log.Printf("Time resets at: %s. Waiting for %s.\n", resetTime, duration)
 
 		r.lock.Lock()
