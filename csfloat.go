@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Bios-Marcel/csfloat_go/ratelimit"
@@ -354,11 +355,12 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListedItem, error
 type TradeState string
 
 const (
+	// Verified means both sides have received the goods.
 	Verified TradeState = "verified"
 	// Cancelled means the buyer decided not to buy afterall.
 	Cancelled TradeState = "cancelled"
 	// Failed means the buyer failed to accept
-	Failed TradeState = "cancelled"
+	Failed TradeState = "failed"
 )
 
 type Trade struct {
@@ -380,6 +382,8 @@ type TradesRequest struct {
 	Page uint `json:"page"`
 	// Limit, default 100
 	Limit uint `json:"limit"`
+	// States, empty by default, not filtering
+	States []TradeState
 }
 
 func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesResponse, error) {
@@ -397,9 +401,21 @@ func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesRespons
 	}
 
 	form := url.Values{}
+	if len(payload.States) > 0 {
+		var str strings.Builder
+		for index, state := range payload.States {
+			str.WriteString(string(state))
+			if index < len(payload.States)-1 {
+				str.WriteRune(',')
+			}
+		}
+		form.Set("state", str.String())
+	}
 	form.Set("page", strconv.FormatUint(uint64(payload.Page), 10))
 	form.Set("limit", strconv.FormatUint(uint64(payload.Limit), 10))
 	request.URL.RawQuery = form.Encode()
+
+	fmt.Println(request.URL.RawQuery)
 
 	request.Header.Set("Authorization", apiKey)
 
