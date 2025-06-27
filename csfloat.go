@@ -85,12 +85,37 @@ type InventoryItem struct {
 	Reference Reference `json:"reference"`
 }
 
+type Sticker struct {
+	Index uint   `json:"stickerId"`
+	Name  string `json:"name"`
+}
+
+type Charm struct {
+	// CharmId is called stickerId, not a typo.
+	Index   uint   `json:"stickerId"`
+	Pattern uint   `json:"pattern"`
+	Name    string `json:"name"`
+}
+
+type ItemType string
+
+const (
+	TypeCharm ItemType = "charm"
+	TypeSkin  ItemType = "skin"
+)
+
 type Item struct {
-	ID             string  `json:"asset_id"`
-	Float          float64 `json:"float_value"`
-	Rarity         Rarity  `json:"rarity"`
-	IsSouvenir     bool    `json:"is_souvenir"`
-	MarketHashName string  `json:"market_hash_name"`
+	ID             string    `json:"asset_id"`
+	Float          float64   `json:"float_value"`
+	Rarity         Rarity    `json:"rarity"`
+	IsSouvenir     bool      `json:"is_souvenir"`
+	Type           ItemType  `jsob:"type"`
+	MarketHashName string    `json:"market_hash_name"`
+	Stickers       []Sticker `json:"stickers"`
+	Charms         []Charm   `json:"keychains"`
+
+	CharmIndex   uint `json:"keychain_index"`
+	CharmPattern uint `json:"keychain_pattern"`
 }
 
 type listingsResponse struct {
