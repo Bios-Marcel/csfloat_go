@@ -10,22 +10,20 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/Bios-Marcel/csfloat_go/ratelimit"
 )
 
-// FIXME Use fee from /me?
+// Fee is a constant fee. Technically the profile has a setting, but it seems
+// its unachievable to reduce the fee, so this is fine for now.
 const Fee float64 = 2
 
 type CSFloat struct {
-	httpClient *ratelimit.RateLimitedClient
+	httpClient *http.Client
 }
 
 func New() *CSFloat {
 	client := http.Client{}
-	// FIXME Set timeout params?
 	return &CSFloat{
-		httpClient: ratelimit.New(&client),
+		httpClient: &client,
 	}
 }
 
@@ -105,29 +103,33 @@ const (
 )
 
 type Item struct {
-	ID             string    `json:"asset_id"`
-	Float          float64   `json:"float_value"`
-	Rarity         Rarity    `json:"rarity"`
-	IsSouvenir     bool      `json:"is_souvenir"`
-	Type           ItemType  `jsob:"type"`
-	MarketHashName string    `json:"market_hash_name"`
-	Stickers       []Sticker `json:"stickers"`
-	Charms         []Charm   `json:"keychains"`
+	ID             string   `json:"asset_id"`
+	Rarity         Rarity   `json:"rarity"`
+	Type           ItemType `jsob:"type"`
+	MarketHashName string   `json:"market_hash_name"`
+
+	Float      float64   `json:"float_value"`
+	IsSouvenir bool      `json:"is_souvenir"`
+	PaintIndex uint      `json:"paint_index"`
+	Stickers   []Sticker `json:"stickers"`
+	Charms     []Charm   `json:"keychains"`
 
 	CharmIndex   uint `json:"keychain_index"`
 	CharmPattern uint `json:"keychain_pattern"`
 }
 
-type listingsResponse struct {
-	Data []ListedItem `json:"data"`
+type ListingsResponse struct {
+	Ratelimits Ratelimits
+	Data       []ListedItem `json:"data"`
 }
+
 type ListingsRequest struct {
 	MinPrice uint
 	MaxPrice uint
 	MaxFloat float32
 }
 
-func (api *CSFloat) Listings(apiKey string, query ListingsRequest) ([]ListedItem, error) {
+func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsResponse, error) {
 	endpoint := "https://csfloat.com/api/v1/listings"
 	request, err := http.NewRequest(
 		http.MethodGet,
@@ -148,16 +150,23 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) ([]ListedItem
 
 	request.Header.Set("Authorization", apiKey)
 
-	response, err := api.httpClient.DoWait(endpoint+apiKey, request)
+	response, err := api.httpClient.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	var result listingsResponse
+	var result ListingsResponse
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
-	return result.Data, nil
+
+	ratelimits, err := RatelimitsFrom(response)
+	if err != nil {
+		return nil, fmt.Errorf("error getting ratelimits: %w", err)
+	}
+	result.Ratelimits = ratelimits
+
+	return &result, nil
 }
 
 func (api *CSFloat) Stall(apiKey, steamId string) (*Stall, error) {
@@ -172,7 +181,7 @@ func (api *CSFloat) Stall(apiKey, steamId string) (*Stall, error) {
 
 	request.Header.Set("Authorization", apiKey)
 
-	response, err := api.httpClient.Do(endpoint+apiKey, request)
+	response, err := api.httpClient.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -209,7 +218,7 @@ func (api *CSFloat) Inventory(apiKey string) ([]InventoryItem, error) {
 
 	request.Header.Set("Authorization", apiKey)
 
-	response, err := api.httpClient.Do(endpoint+apiKey, request)
+	response, err := api.httpClient.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -248,7 +257,7 @@ func (api *CSFloat) Me(apiKey string) (*Me, error) {
 
 	request.Header.Set("Authorization", apiKey)
 
-	response, err := api.httpClient.Do(endpoint+apiKey, request)
+	response, err := api.httpClient.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -272,7 +281,7 @@ func (api *CSFloat) Unlist(apiKey, listingId string) error {
 
 	request.Header.Set("Authorization", apiKey)
 
-	response, err := api.httpClient.Do(endpoint+apiKey, request)
+	response, err := api.httpClient.Do(request)
 	if err != nil {
 		return fmt.Errorf("error sending request: %w", err)
 	}
@@ -309,7 +318,7 @@ func (api *CSFloat) UpdateListing(apiKey, id string, payload UpdateListingReques
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	response, err := api.httpClient.Do(endpoint+apiKey, request)
+	response, err := api.httpClient.Do(request)
 	if err != nil {
 		return fmt.Errorf("error sending request: %w", err)
 	}
@@ -339,6 +348,7 @@ type ListRequest struct {
 	Description string      `json:"description"`
 }
 
+// List puts an item up for sale
 func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListedItem, error) {
 	var buffer bytes.Buffer
 	if err := json.NewEncoder(&buffer).Encode(payload); err != nil {
@@ -359,7 +369,7 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListedItem, error
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 
-	response, err := api.httpClient.Do(endpoint+apiKey, request)
+	response, err := api.httpClient.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -398,8 +408,9 @@ type Trade struct {
 }
 
 type TradesResponse struct {
-	Trades []Trade `json:"trades"`
-	Count  uint    `json:"count"`
+	Ratelimits Ratelimits
+	Trades     []Trade `json:"trades"`
+	Count      uint    `json:"count"`
 }
 
 type TradesRequest struct {
@@ -444,7 +455,7 @@ func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesRespons
 
 	request.Header.Set("Authorization", apiKey)
 
-	response, err := api.httpClient.DoWait(endpoint+apiKey, request)
+	response, err := api.httpClient.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -457,5 +468,70 @@ func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesRespons
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
+
+	ratelimits, err := RatelimitsFrom(response)
+	if err != nil {
+		return nil, fmt.Errorf("error getting ratelimits")
+	}
+
+	result.Ratelimits = ratelimits
+
 	return &result, nil
+}
+
+type HistoryEntry struct {
+	Pruce  uint      `json:"price"`
+	Item   Item      `json:"item"`
+	SoldAt time.Time `json:"sold_at"`
+}
+
+type HistoryRequestPayload struct {
+	MarketHashName string
+	PaintIndex     uint
+}
+
+type HistoryResponse struct {
+	Ratelimits Ratelimits
+	Data       []HistoryEntry
+}
+
+func (api *CSFloat) History(apiKey string, payload HistoryRequestPayload) (*HistoryResponse, error) {
+	endpoint := "https://csfloat.com/api/v1/history"
+	request, err := http.NewRequest(
+		http.MethodGet,
+		fmt.Sprintf("%s/%s/sales", endpoint, url.QueryEscape(payload.MarketHashName)),
+		nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	form := url.Values{}
+	form.Set("paint_index", strconv.FormatUint(uint64(payload.PaintIndex), 10))
+	request.URL.RawQuery = form.Encode()
+
+	request.Header.Set("Authorization", apiKey)
+
+	response, err := api.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid return code: %d", response.StatusCode)
+	}
+
+	var result []HistoryEntry
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	ratelimits, err := RatelimitsFrom(response)
+	if err != nil {
+		return nil, fmt.Errorf("error getting ratelimits: %w", err)
+	}
+
+	return &HistoryResponse{
+		Ratelimits: ratelimits,
+		Data:       result,
+	}, nil
 }
