@@ -108,11 +108,16 @@ type Item struct {
 	Type           ItemType `jsob:"type"`
 	MarketHashName string   `json:"market_hash_name"`
 
-	Float      float64   `json:"float_value"`
-	IsSouvenir bool      `json:"is_souvenir"`
-	PaintIndex uint      `json:"paint_index"`
-	Stickers   []Sticker `json:"stickers"`
-	Charms     []Charm   `json:"keychains"`
+	Float      float64 `json:"float_value"`
+	IsSouvenir bool    `json:"is_souvenir"`
+	// DefIndex is the weapon type
+	DefIndex uint `json:"def_index"`
+	// PaintIndex is the skin type
+	PaintIndex uint `json:"paint_index"`
+	// PaintSeed determines the skin pattern
+	PaintSeed uint      `json:"paint_seed"`
+	Stickers  []Sticker `json:"stickers"`
+	Charms    []Charm   `json:"keychains"`
 
 	CharmIndex   uint `json:"keychain_index"`
 	CharmPattern uint `json:"keychain_pattern"`
@@ -124,9 +129,11 @@ type ListingsResponse struct {
 }
 
 type ListingsRequest struct {
-	MinPrice uint
-	MaxPrice uint
-	MaxFloat float32
+	MinPrice    uint
+	MaxPrice    uint
+	MinFloat    float32
+	MaxFloat    float32
+	ExcludeRare bool
 }
 
 func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsResponse, error) {
@@ -143,8 +150,13 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 	form.Set("type", "buy_now")
 	form.Set("sort_by", "highest_discount")
 	form.Set("limit", "40")
+	if query.ExcludeRare {
+		form.Set("min_ref_qty", strconv.FormatUint(20, 10))
+	}
 	form.Set("min_price", fmt.Sprintf("%d", query.MinPrice))
 	form.Set("max_price", fmt.Sprintf("%d", query.MaxPrice))
+	form.Set("min_float", fmt.Sprintf("%f", query.MinFloat))
+	// FIXME Set max float to 0.99 to avoid charms and stickers?
 	form.Set("max_float", fmt.Sprintf("%f", query.MaxFloat))
 	request.URL.RawQuery = form.Encode()
 
