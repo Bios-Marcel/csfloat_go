@@ -76,6 +76,7 @@ type ListedItem struct {
 	Description      string      `json:"description"`
 	Private          bool        `json:"private"`
 	MaxOfferDiscount uint        `json:"max_offer_discount"`
+	Watchers         uint        `json:"watchers"`
 }
 
 type InventoryItem struct {
