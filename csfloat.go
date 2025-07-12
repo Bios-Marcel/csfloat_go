@@ -61,39 +61,49 @@ const (
 	FactoryNew    WearName = "Factory New"
 )
 
-type Reference struct {
+type ItemReference struct {
 	BasePrice      uint `json:"base_price"`
 	PredictedPrice uint `json:"predicted_price"`
 	Quantity       uint `json:"quantity"`
 }
 
+type Reference struct {
+	Price    uint `json:"price"`
+	Quantity uint `json:"quantity"`
+}
+
 type ListedItem struct {
-	ID               string      `json:"id"`
-	Price            uint        `json:"price"`
-	Item             Item        `json:"item"`
-	Reference        Reference   `json:"reference"`
-	Type             AuctionType `json:"type"`
-	Description      string      `json:"description"`
-	Private          bool        `json:"private"`
-	MaxOfferDiscount uint        `json:"max_offer_discount"`
-	Watchers         uint        `json:"watchers"`
+	ID               string        `json:"id"`
+	Price            uint          `json:"price"`
+	Item             Item          `json:"item"`
+	Reference        ItemReference `json:"reference"`
+	Type             AuctionType   `json:"type"`
+	Description      string        `json:"description"`
+	Private          bool          `json:"private"`
+	MaxOfferDiscount uint          `json:"max_offer_discount"`
+	Watchers         uint          `json:"watchers"`
 }
 
 type InventoryItem struct {
 	Item
-	Reference Reference `json:"reference"`
+	Reference ItemReference `json:"reference"`
 }
 
 type Sticker struct {
-	Index uint   `json:"stickerId"`
-	Name  string `json:"name"`
+	Index     uint      `json:"stickerId"`
+	Name      string    `json:"name"`
+	Reference Reference `json:"reference"`
+	ItemURL   string    `json:"item_url"`
+	Wear      float32   `json:"wear"`
+	Rotation  float32   `json:"rotation"`
 }
 
 type Charm struct {
 	// CharmId is called stickerId, not a typo.
-	Index   uint   `json:"stickerId"`
-	Pattern uint   `json:"pattern"`
-	Name    string `json:"name"`
+	Index     uint      `json:"stickerId"`
+	Pattern   uint      `json:"pattern"`
+	Name      string    `json:"name"`
+	Reference Reference `json:"reference"`
 }
 
 type ItemType string
@@ -493,7 +503,7 @@ func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesRespons
 }
 
 type HistoryEntry struct {
-	Pruce  uint      `json:"price"`
+	Price  uint      `json:"price"`
 	Item   Item      `json:"item"`
 	SoldAt time.Time `json:"sold_at"`
 }
