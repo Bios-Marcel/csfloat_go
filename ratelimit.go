@@ -40,7 +40,11 @@ func RatelimitsFrom(response *http.Response) (Ratelimits, error) {
 	ratelimits.Limit = uint(limitInt)
 	resetTime := time.Unix(int64(resetInt), 0)
 	ratelimits.Reset = resetTime
-	ratelimits.SuggestedWait = now.Add(resetTime.Sub(now) / time.Duration(remainingInt))
+	if remainingInt == 0 {
+		ratelimits.SuggestedWait = resetTime
+	} else {
+		ratelimits.SuggestedWait = now.Add(resetTime.Sub(now) / time.Duration(remainingInt))
+	}
 
 	return ratelimits, nil
 }

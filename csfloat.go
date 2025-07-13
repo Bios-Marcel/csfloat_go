@@ -113,6 +113,23 @@ const (
 	TypeSkin  ItemType = "skin"
 )
 
+type Fade struct {
+	// Seed sems to be the same as the paintseed so far.
+	Seed       uint    `json:"seed"`
+	Percentage float64 `json:"percentage"`
+	Rank       uint    `json:"rank"`
+	Type       string  `json:"type"`
+}
+
+type BlueGem struct {
+	PlaysideBlue   float64 `json:"playside_blue"`
+	PlaysideGold   float64 `json:"playside_gold"`
+	PlaysidePurple float64 `json:"playside_purple"`
+	BacksideBlue   float64 `json:"backside_blue"`
+	BacksideGold   float64 `json:"backside_gold"`
+	BacksidePurple float64 `json:"backside_purple"`
+}
+
 type Item struct {
 	ID             string   `json:"asset_id"`
 	Rarity         Rarity   `json:"rarity"`
@@ -129,6 +146,8 @@ type Item struct {
 	PaintSeed uint      `json:"paint_seed"`
 	Stickers  []Sticker `json:"stickers"`
 	Charms    []Charm   `json:"keychains"`
+	Fade      *Fade     `json:"fade"`
+	BlueGem   *BlueGem  `json:"blue_gem"`
 
 	CharmIndex   uint `json:"keychain_index"`
 	CharmPattern uint `json:"keychain_pattern"`
