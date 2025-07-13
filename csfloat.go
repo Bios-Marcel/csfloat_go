@@ -594,10 +594,15 @@ type BuyRequestPayload struct {
 
 func (api *CSFloat) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse, error) {
 	endpoint := "https://csfloat.com/api/v1/listings/buy"
+	var buffer bytes.Buffer
+	if err := json.NewEncoder(&buffer).Encode(payload); err != nil {
+		return nil, fmt.Errorf("error encoding payload: %w", err)
+	}
+
 	request, err := http.NewRequest(
 		http.MethodPost,
 		endpoint,
-		nil)
+		&buffer)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
