@@ -153,6 +153,10 @@ type Item struct {
 	CharmPattern uint `json:"keychain_pattern"`
 }
 
+func (item Item) IsFadeSkin() bool {
+	return item.Fade.Percentage != 0.0
+}
+
 type ListingsResponse struct {
 	Ratelimits Ratelimits
 	Data       []ListedItem `json:"data"`
@@ -576,4 +580,49 @@ func (api *CSFloat) History(apiKey string, payload HistoryRequestPayload) (*Hist
 		Ratelimits: ratelimits,
 		Data:       result,
 	}, nil
+}
+
+type BuyResponse struct {
+	Ratelimits Ratelimits
+	Message    string `json:"message"`
+}
+
+type BuyRequestPayload struct {
+	ContractIds []string `json:"contract_ids"`
+	TotalPrice  uint     `json:"total_price"`
+}
+
+func (api *CSFloat) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse, error) {
+	endpoint := "https://csfloat.com/api/v1/listings/buy"
+	request, err := http.NewRequest(
+		http.MethodPost,
+		endpoint,
+		nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	request.Header.Set("Authorization", apiKey)
+
+	response, err := api.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid return code: %d", response.StatusCode)
+	}
+
+	var result BuyResponse
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	ratelimits, err := RatelimitsFrom(response)
+	if err != nil {
+		return nil, fmt.Errorf("error getting ratelimits: %w", err)
+	}
+	result.Ratelimits = ratelimits
+
+	return &result, nil
 }
