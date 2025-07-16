@@ -201,20 +201,20 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid status code: %d", response.StatusCode)
-	}
-
 	var result ListingsResponse
-	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("error decoding response: %w", err)
-	}
-
 	ratelimits, err := RatelimitsFrom(response)
 	if err != nil {
 		return nil, fmt.Errorf("error getting ratelimits: %w", err)
 	}
 	result.Ratelimits = ratelimits
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid status code (%d): %s", response.StatusCode, mustString(response))
+	}
+
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
+	}
 
 	return &result, nil
 }
