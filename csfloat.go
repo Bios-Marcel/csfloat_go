@@ -209,11 +209,11 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 	result.Ratelimits = ratelimits
 
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid status code (%d): %s", response.StatusCode, mustString(response))
+		return &result, fmt.Errorf("invalid status code (%d): %s", response.StatusCode, mustString(response))
 	}
 
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("error decoding response: %w", err)
+		return &result, fmt.Errorf("error decoding response: %w", err)
 	}
 
 	return &result, nil
