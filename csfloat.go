@@ -201,6 +201,10 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid status code: %d", response.StatusCode)
+	}
+
 	var result ListingsResponse
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("error decoding response: %w", err)
