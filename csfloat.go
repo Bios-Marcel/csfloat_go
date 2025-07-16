@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -194,6 +195,7 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 	form.Set("max_float", fmt.Sprintf("%f", query.MaxFloat))
 	request.URL.RawQuery = form.Encode()
 
+	log.Println(request.URL.RawQuery)
 	request.Header.Set("Authorization", apiKey)
 
 	response, err := api.httpClient.Do(request)
@@ -208,6 +210,7 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 	}
 	result.Ratelimits = ratelimits
 
+	log.Println(mustString(response))
 	if response.StatusCode != http.StatusOK {
 		return &result, fmt.Errorf("invalid status code (%d): %s", response.StatusCode, mustString(response))
 	}
