@@ -162,12 +162,37 @@ type ListingsResponse struct {
 	Data       []ListedItem `json:"data"`
 }
 
+type Category uint
+
+const (
+	Normal   = 1
+	StatTrak = 2
+	Souvenir = 3
+)
+
 type ListingsRequest struct {
 	MinPrice    uint
 	MaxPrice    uint
 	MinFloat    float32
 	MaxFloat    float32
 	ExcludeRare bool
+	Category    Category
+	DefIndex    uint
+	PaintIndex  uint
+}
+
+func (api *CSFloat) FloatRange(f float32) (float32, float32) {
+	if f < 0.07 {
+		return 0.0, 0.07
+	} else if f < 0.15 {
+		return 0.07, 0.15
+	} else if f < 0.38 {
+		return 0.15, 0.38
+	} else if f < 0.45 {
+		return 0.38, 0.45
+	}
+
+	return 0.45, 1.0
 }
 
 func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsResponse, error) {
@@ -186,6 +211,15 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 	form.Set("limit", "40")
 	if query.ExcludeRare {
 		form.Set("min_ref_qty", strconv.FormatUint(20, 10))
+	}
+	if query.DefIndex > 0 {
+		form.Set("def_index", strconv.FormatUint(uint64(query.DefIndex), 10))
+	}
+	if query.PaintIndex > 0 {
+		form.Set("paint_index", strconv.FormatUint(uint64(query.PaintIndex), 10))
+	}
+	if query.Category > 0 {
+		form.Set("category", strconv.FormatUint(uint64(query.Category), 10))
 	}
 	form.Set("min_price", fmt.Sprintf("%d", query.MinPrice))
 	form.Set("max_price", fmt.Sprintf("%d", query.MaxPrice))
