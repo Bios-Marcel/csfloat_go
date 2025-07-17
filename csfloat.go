@@ -32,11 +32,11 @@ type Stall struct {
 	Count int          `json:"total_count"`
 }
 
-type AuctionType string
+type ListingType string
 
 const (
-	BuyNow  AuctionType = "buy_now"
-	Auction AuctionType = "auction"
+	BuyNow  ListingType = "buy_now"
+	Auction ListingType = "auction"
 )
 
 type Rarity uint8
@@ -77,7 +77,7 @@ type ListedItem struct {
 	Price            uint          `json:"price"`
 	Item             Item          `json:"item"`
 	Reference        ItemReference `json:"reference"`
-	Type             AuctionType   `json:"type"`
+	Type             ListingType   `json:"type"`
 	Description      string        `json:"description"`
 	Private          bool          `json:"private"`
 	MaxOfferDiscount uint          `json:"max_offer_discount"`
@@ -394,7 +394,7 @@ type ListRequest struct {
 	*AuctionRequest `json:",omitempty"`
 
 	AssetId     string      `json:"asset_id"`
-	AuctionType AuctionType `json:"type"`
+	AuctionType ListingType `json:"type"`
 	Description string      `json:"description"`
 }
 
@@ -566,24 +566,24 @@ func (api *CSFloat) History(apiKey string, payload HistoryRequestPayload) (*Hist
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid return code: %d", response.StatusCode)
-	}
-
-	var result []HistoryEntry
-	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("error decoding response: %w", err)
-	}
-
 	ratelimits, err := RatelimitsFrom(response)
 	if err != nil {
 		return nil, fmt.Errorf("error getting ratelimits: %w", err)
 	}
 
-	return &HistoryResponse{
+	result := &HistoryResponse{
 		Ratelimits: ratelimits,
-		Data:       result,
-	}, nil
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return result, fmt.Errorf("invalid return code: %d", response.StatusCode)
+	}
+
+	if err := json.NewDecoder(response.Body).Decode(&result.Data); err != nil {
+		return result, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	return result, nil
 }
 
 type BuyResponse struct {
@@ -618,20 +618,115 @@ func (api *CSFloat) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse,
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid return code: %d", response.StatusCode)
+	ratelimits, err := RatelimitsFrom(response)
+	if err != nil {
+		return nil, fmt.Errorf("error getting ratelimits: %w", err)
 	}
 
-	var result BuyResponse
+	result := &BuyResponse{
+		Ratelimits: ratelimits,
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return result, fmt.Errorf("invalid return code: %d", response.StatusCode)
+	}
+
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("error decoding response: %w", err)
+		return result, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	return result, nil
+}
+
+type ItemBuyOrdersResponse struct {
+	Ratelimits Ratelimits
+	Data       []ItemBuyOrder
+}
+
+type ItemBuyOrder struct {
+	// MarketHashName is only used for simple buy orders.
+	MarketHashName string `json:"market_hash_name"`
+	// Expression is only used for advanced buy orders.
+	Expression string `json:"expression"`
+	Quantity   uint   `json:"qty"`
+	Price      uint   `json:"price"`
+}
+
+func (api *CSFloat) ItemBuyOrders(apiKey, listingId string) (*ItemBuyOrdersResponse, error) {
+	endpoint := "https://csfloat.com/api/v1/listings/%s/buy-orders?limit=10"
+	request, err := http.NewRequest(
+		http.MethodGet,
+		fmt.Sprint(endpoint, listingId),
+		nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	request.Header.Set("Authorization", apiKey)
+
+	response, err := api.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
 	ratelimits, err := RatelimitsFrom(response)
 	if err != nil {
 		return nil, fmt.Errorf("error getting ratelimits: %w", err)
 	}
-	result.Ratelimits = ratelimits
 
-	return &result, nil
+	result := &ItemBuyOrdersResponse{
+		Ratelimits: ratelimits,
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return result, fmt.Errorf("invalid return code: %d", response.StatusCode)
+	}
+
+	if err := json.NewDecoder(response.Body).Decode(&result.Data); err != nil {
+		return result, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	return result, nil
+}
+
+type SimilarResponse struct {
+	Ratelimits Ratelimits
+	Data       []*ListedItem
+}
+
+func (api *CSFloat) Similar(apiKey, listingId string) (*SimilarResponse, error) {
+	endpoint := "https://csfloat.com/api/v1/listings/%s/similar"
+	request, err := http.NewRequest(
+		http.MethodGet,
+		fmt.Sprint(endpoint, listingId),
+		nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	request.Header.Set("Authorization", apiKey)
+
+	response, err := api.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+
+	ratelimits, err := RatelimitsFrom(response)
+	if err != nil {
+		return nil, fmt.Errorf("error getting ratelimits: %w", err)
+	}
+
+	result := &SimilarResponse{
+		Ratelimits: ratelimits,
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return result, fmt.Errorf("invalid return code: %d", response.StatusCode)
+	}
+
+	if err := json.NewDecoder(response.Body).Decode(&result.Data); err != nil {
+		return result, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	return result, nil
 }
