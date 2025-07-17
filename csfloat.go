@@ -222,11 +222,17 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 	if query.Category > 0 {
 		form.Set("category", strconv.FormatUint(uint64(query.Category), 10))
 	}
-	form.Set("min_price", fmt.Sprintf("%d", query.MinPrice))
-	form.Set("max_price", fmt.Sprintf("%d", query.MaxPrice))
-	form.Set("min_float", fmt.Sprintf("%f", query.MinFloat))
+	if query.MinPrice > 0 {
+		form.Set("min_price", fmt.Sprintf("%d", query.MinPrice))
+	}
+	if query.MaxPrice > 0 {
+		form.Set("max_price", fmt.Sprintf("%d", query.MaxPrice))
+	}
+	form.Set("min_float", fmt.Sprintf("%0f", query.MinFloat))
 	// FIXME Set max float to 0.99 to avoid charms and stickers?
-	form.Set("max_float", fmt.Sprintf("%f", query.MaxFloat))
+	if query.MaxFloat > 0 {
+		form.Set("max_float", fmt.Sprintf("%0f", query.MaxFloat))
+	}
 	request.URL.RawQuery = form.Encode()
 
 	request.Header.Set("Authorization", apiKey)
