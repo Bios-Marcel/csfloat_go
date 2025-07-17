@@ -137,6 +137,7 @@ type Item struct {
 	MarketHashName string   `json:"market_hash_name"`
 
 	Float      float64 `json:"float_value"`
+	IsStattrak bool    `json:"is_stattrak"`
 	IsSouvenir bool    `json:"is_souvenir"`
 	// DefIndex is the weapon type
 	DefIndex uint `json:"def_index"`
