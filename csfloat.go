@@ -269,7 +269,12 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 	return &result, nil
 }
 
-func (api *CSFloat) Stall(apiKey, steamId string) (*Stall, error) {
+type StallResponse struct {
+	Stall
+	Ratelimits Ratelimits
+}
+
+func (api *CSFloat) Stall(apiKey, steamId string) (*StallResponse, error) {
 	endpoint := fmt.Sprintf("https://csfloat.com/api/v1/users/%s/stall", steamId)
 	request, err := http.NewRequest(
 		http.MethodGet,
@@ -286,16 +291,23 @@ func (api *CSFloat) Stall(apiKey, steamId string) (*Stall, error) {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	if response.StatusCode > 200 {
-		return nil, fmt.Errorf("bad response: %d: %s", response.StatusCode, mustString(response))
+	ratelimits, err := RatelimitsFrom(response)
+	if err != nil {
+		return nil, fmt.Errorf("error getting ratelimits: %w", err)
 	}
 
-	var stall Stall
-	if err := json.NewDecoder(response.Body).Decode(&stall); err != nil {
-		return nil, fmt.Errorf("error decoding response: %w", err)
+	result := &StallResponse{
+		Ratelimits: ratelimits,
+	}
+	if response.StatusCode != 200 {
+		return result, fmt.Errorf("bad response: %d: %s", response.StatusCode, mustString(response))
 	}
 
-	return &stall, nil
+	if err := json.NewDecoder(response.Body).Decode(&result.Stall); err != nil {
+		return result, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	return result, nil
 }
 
 func mustString(response *http.Response) string {
@@ -306,7 +318,12 @@ func mustString(response *http.Response) string {
 	return string(b)
 }
 
-func (api *CSFloat) Inventory(apiKey string) ([]InventoryItem, error) {
+type InventoryResponse struct {
+	Data       []InventoryItem
+	Ratelimits Ratelimits
+}
+
+func (api *CSFloat) Inventory(apiKey string) (*InventoryResponse, error) {
 	endpoint := "https://csfloat.com/api/v1/me/inventory"
 	request, err := http.NewRequest(
 		http.MethodGet,
@@ -323,16 +340,28 @@ func (api *CSFloat) Inventory(apiKey string) ([]InventoryItem, error) {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
+	ratelimits, err := RatelimitsFrom(response)
+	if err != nil {
+		return nil, fmt.Errorf("error getting ratelimits: %w", err)
+	}
+
+	result := &InventoryResponse{
+		Ratelimits: ratelimits,
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return result, fmt.Errorf("invalid return code: %d", response.StatusCode)
+	}
+
 	// It returns everything, including what's in stall.
 	// tradeable will always be 1, since steam does not shot untradable items
 	// anymore. Items with a `listing_id` are already in your stall.
 
-	var items []InventoryItem
-	if err := json.NewDecoder(response.Body).Decode(&items); err != nil {
-		return nil, fmt.Errorf("error decoding response: %w", err)
+	if err := json.NewDecoder(response.Body).Decode(&result.Data); err != nil {
+		return result, fmt.Errorf("error decoding response: %w", err)
 	}
 
-	return items, nil
+	return result, nil
 }
 
 type MeUser struct {
