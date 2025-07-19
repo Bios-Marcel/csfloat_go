@@ -13,7 +13,9 @@ type Ratelimits struct {
 	SuggestedWait time.Time
 }
 
-func RatelimitsFrom(response *http.Response) (Ratelimits, error) {
+// ratelimitsFrom parses the headers to get ratelimiting. It does NOT consume
+// the body.
+func ratelimitsFrom(response *http.Response) (Ratelimits, error) {
 	var ratelimits Ratelimits
 
 	remaining := response.Header.Get("X-Ratelimit-Remaining")

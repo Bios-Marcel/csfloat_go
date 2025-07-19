@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -21,9 +22,21 @@ type CSFloat struct {
 }
 
 func New() *CSFloat {
-	client := http.Client{}
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout: 3 * time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout:   3 * time.Second,
+		ResponseHeaderTimeout: 3 * time.Second,
+		ExpectContinueTimeout: 3 * time.Second,
+	}
+
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   4 * time.Second,
+	}
 	return &CSFloat{
-		httpClient: &client,
+		httpClient: client,
 	}
 }
 
@@ -252,7 +265,7 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 	}
 
 	var result ListingsResponse
-	ratelimits, err := RatelimitsFrom(response)
+	ratelimits, err := ratelimitsFrom(response)
 	if err != nil {
 		return nil, fmt.Errorf("error getting ratelimits: %w", err)
 	}
@@ -291,7 +304,7 @@ func (api *CSFloat) Stall(apiKey, steamId string) (*StallResponse, error) {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	ratelimits, err := RatelimitsFrom(response)
+	ratelimits, err := ratelimitsFrom(response)
 	if err != nil {
 		return nil, fmt.Errorf("error getting ratelimits: %w", err)
 	}
@@ -340,7 +353,7 @@ func (api *CSFloat) Inventory(apiKey string) (*InventoryResponse, error) {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	ratelimits, err := RatelimitsFrom(response)
+	ratelimits, err := ratelimitsFrom(response)
 	if err != nil {
 		return nil, fmt.Errorf("error getting ratelimits: %w", err)
 	}
@@ -477,8 +490,20 @@ type ListRequest struct {
 	Description string      `json:"description"`
 }
 
+type Error struct {
+	HttpStatus uint   `json:"-"`
+	Code       uint   `json:"code"`
+	Message    string `json:"message"`
+}
+
+type ListResponse struct {
+	Item       *ListedItem
+	Ratelimits Ratelimits
+	Error      *Error
+}
+
 // List puts an item up for sale
-func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListedItem, error) {
+func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListResponse, error) {
 	var buffer bytes.Buffer
 	if err := json.NewEncoder(&buffer).Encode(payload); err != nil {
 		return nil, fmt.Errorf("error encoding payload: %w", err)
@@ -503,17 +528,30 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListedItem, error
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	// FIXME Get body?
+	ratelimits, err := ratelimitsFrom(response)
+	if err != nil {
+		return nil, fmt.Errorf("error getting ratelimits: %w", err)
+	}
+
+	result := &ListResponse{
+		Ratelimits: ratelimits,
+	}
+
 	if response.StatusCode != 200 {
-		return nil, fmt.Errorf("invalid status code: %d", response.StatusCode)
+		csfloatError, err := errorFrom(response)
+		if err != nil {
+			return result, fmt.Errorf("invalid status code, couldn't read error message: %d", response.StatusCode)
+		}
+
+		result.Error = &csfloatError
+		return result, fmt.Errorf("invalid status code: %d", response.StatusCode)
 	}
 
-	var result ListedItem
-	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("error decoding response, item was relisted: %w", err)
+	if err := json.NewDecoder(response.Body).Decode(result.Item); err != nil {
+		return result, fmt.Errorf("error decoding response, item was relisted: %w", err)
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 type TradeState string
@@ -630,7 +668,7 @@ func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesRespons
 		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
 
-	ratelimits, err := RatelimitsFrom(response)
+	ratelimits, err := ratelimitsFrom(response)
 	if err != nil {
 		return nil, fmt.Errorf("error getting ratelimits")
 	}
@@ -677,7 +715,7 @@ func (api *CSFloat) History(apiKey string, payload HistoryRequestPayload) (*Hist
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	ratelimits, err := RatelimitsFrom(response)
+	ratelimits, err := ratelimitsFrom(response)
 	if err != nil {
 		return nil, fmt.Errorf("error getting ratelimits: %w", err)
 	}
@@ -729,7 +767,7 @@ func (api *CSFloat) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse,
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	ratelimits, err := RatelimitsFrom(response)
+	ratelimits, err := ratelimitsFrom(response)
 	if err != nil {
 		return nil, fmt.Errorf("error getting ratelimits: %w", err)
 	}
@@ -780,7 +818,7 @@ func (api *CSFloat) ItemBuyOrders(apiKey, listingId string) (*ItemBuyOrdersRespo
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	ratelimits, err := RatelimitsFrom(response)
+	ratelimits, err := ratelimitsFrom(response)
 	if err != nil {
 		return nil, fmt.Errorf("error getting ratelimits: %w", err)
 	}
@@ -822,7 +860,7 @@ func (api *CSFloat) Similar(apiKey, listingId string) (*SimilarResponse, error) 
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
-	ratelimits, err := RatelimitsFrom(response)
+	ratelimits, err := ratelimitsFrom(response)
 	if err != nil {
 		return nil, fmt.Errorf("error getting ratelimits: %w", err)
 	}
@@ -840,4 +878,10 @@ func (api *CSFloat) Similar(apiKey, listingId string) (*SimilarResponse, error) 
 	}
 
 	return result, nil
+}
+
+func errorFrom(response *http.Response) (Error, error) {
+	var csfloatError Error
+	csfloatError.HttpStatus = uint(response.StatusCode)
+	return csfloatError, json.NewDecoder(response.Body).Decode(&csfloatError)
 }
