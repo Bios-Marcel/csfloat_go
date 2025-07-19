@@ -154,8 +154,16 @@ type Item struct {
 	CharmPattern uint `json:"keychain_pattern"`
 }
 
-func (item Item) IsFadeSkin() bool {
-	return item.Fade.Percentage != 0.0
+// Category will map to the query category matching this item. This is required
+// for listing similar items.
+func (item *Item) Category() Category {
+	if item.IsSouvenir {
+		return Souvenir
+	}
+	if item.IsStattrak {
+		return StatTrak
+	}
+	return Normal
 }
 
 type ListingsResponse struct {
@@ -182,6 +190,7 @@ type ListingsRequest struct {
 	PaintIndex  uint
 }
 
+// FloatRange returns the float range for the given quality (fn, mw, ...).
 func (api *CSFloat) FloatRange(f float32) (float32, float32) {
 	if f < 0.07 {
 		return 0.0, 0.07
