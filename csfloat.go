@@ -519,21 +519,53 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListedItem, error
 type TradeState string
 
 const (
+	// Queued means it was just bought, step 1.
+	Queued TradeState = "queued"
+	// Pending is the stage after queued, meaning the sale was accepted, but
+	// has not been verified yet. You can also be in this state if the item
+	// is still in trade protection, but would otherwise be verified. In this
+	// state it is relevant to check for all the different timestamp fields on
+	// the trade object. The verification mode will also already be escrow at
+	// this point in time.
+	Pending TradeState = "pending"
 	// Verified means both sides have received the goods.
 	Verified TradeState = "verified"
 	// Cancelled means the buyer decided not to buy afterall.
 	Cancelled TradeState = "cancelled"
-	// Failed means the buyer failed to accept
+	// Failed means the buyer failed to accept.
 	Failed TradeState = "failed"
+)
+
+type VerificationMode string
+
+const (
+	// Inventory is the mode right after purchase, before anyone has
+	// accepted anything until the seller accepted the sale.
+	Inventory VerificationMode = "inventory"
+	// Escrow means both sides have accepted everything, but the balance isn't
+	// usable yet.
+	Escrow VerificationMode = "escrow"
 )
 
 type Trade struct {
 	ID string `json:"id"`
 	// BuyerId is the steam ID, which can be your own ID if you are the buyer.
-	BuyerId    string     `json:"buyer_id"`
-	Contract   ListedItem `json:"contract"`
-	VerifiedAt time.Time  `json:"verified_at"`
-	State      TradeState `json:"state"`
+	BuyerId  string     `json:"buyer_id"`
+	Contract ListedItem `json:"contract"`
+	// CreatedAt is the time at which the sale was made, either through a buy
+	// order or manually.
+	CreatedAt time.Time `json:"created_at"`
+	// AcceptedAt, is the time where the trade accepted the trade on CSFloat.
+	AcceptedAt time.Time `json:"accepted_at"`
+	// TradeProtectionEndsAt is the time at which the Steam trade protection
+	// ends. Only after this, we can verify.
+	TradeProtectionEndsAt time.Time `json:"trade_protection_ends_at"`
+	// VerifySaleAt is the time after which the traede protection runs out.
+	VerifySaleAt time.Time `json:"verify_sale_at"`
+	// VerifiedAt is the time at which escrow ended.
+	VerifiedAt       time.Time        `json:"verified_at"`
+	State            TradeState       `json:"state"`
+	VerificationMode VerificationMode `json:"verification_mode"`
 }
 
 type TradesResponse struct {
