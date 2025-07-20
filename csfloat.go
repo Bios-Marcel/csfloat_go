@@ -650,8 +650,6 @@ func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesRespons
 	form.Set("limit", strconv.FormatUint(uint64(payload.Limit), 10))
 	request.URL.RawQuery = form.Encode()
 
-	fmt.Println(request.URL.RawQuery)
-
 	request.Header.Set("Authorization", apiKey)
 
 	response, err := api.httpClient.Do(request)
