@@ -75,8 +75,8 @@ const (
 )
 
 type ItemReference struct {
-	BasePrice      uint `json:"base_price"`
-	PredictedPrice uint `json:"predicted_price"`
+	BasePrice      int  `json:"base_price"`
+	PredictedPrice int  `json:"predicted_price"`
 	Quantity       uint `json:"quantity"`
 }
 
@@ -87,7 +87,7 @@ type Reference struct {
 
 type ListedItem struct {
 	ID               string        `json:"id"`
-	Price            uint          `json:"price"`
+	Price            int           `json:"price"`
 	Item             Item          `json:"item"`
 	Reference        ItemReference `json:"reference"`
 	Type             ListingType   `json:"type"`
@@ -193,8 +193,8 @@ const (
 )
 
 type ListingsRequest struct {
-	MinPrice    uint
-	MaxPrice    uint
+	MinPrice    int
+	MaxPrice    int
 	MinFloat    float32
 	MaxFloat    float32
 	ExcludeRare bool
