@@ -883,3 +883,143 @@ func errorFrom(response *http.Response) (Error, error) {
 	csfloatError.HttpStatus = uint(response.StatusCode)
 	return csfloatError, json.NewDecoder(response.Body).Decode(&csfloatError)
 }
+
+type TransactionType string
+
+const (
+	TransactionTypeDeposit                  TransactionType = "deposit"
+	TransactionTypeContractSold             TransactionType = "contract_sold"
+	TransactionTypeContractPurchased        TransactionType = "contract_purchased"
+	TransactionTypeContractPurchaseRefunded TransactionType = "contract_purchase_refund"
+	TransactionTypeTradeVerified            TransactionType = "trade_verified"
+	TransactionTypeTradeFine                TransactionType = "fine"
+	TransactionTypeBidDeclined              TransactionType = "bid_declined"
+	TransactionTypeBidPosted                TransactionType = "bid_posted"
+)
+
+type TransactionDetailType string
+
+const (
+	TransactionDetailTypeBuyerConfirm TransactionDetailType = "buyer_confirm"
+	TransactionDetailTypeBuyerPing    TransactionDetailType = "buyer_ping"
+	TransactionDetailTypeLink         TransactionDetailType = "link"
+	TransactionDetailTypeFloatDB      TransactionDetailType = "floatdb"
+)
+
+type TransactionDetails struct {
+	ContractID string `json:"contract_id"`
+	TradeID    string `json:"trade_id"`
+	BidID      string `json:"bid_id"`
+	// ListingID is used for BidPosted
+	ListingID             string                `json:"listing_id"`
+	BuyOrderID            string                `json:"buy_order_id"`
+	OriginalTransactionId string                `json:"original_tx"`
+	Type                  TransactionDetailType `json:"type"`
+	// FeeAmountString should not be used, use the FeeAmount function instead.
+	FeeAmountString string `json:"fee_amount"`
+	// Reason is used for fines and others.
+	Reason string `json:"reason"`
+
+	// Fee is used for Deposits. God knows why its a seperate field and not
+	// FeeAmountString.
+	FeeString        string `json:"fee"`
+	PaymentMethod    string `json:"payment_method"`
+	PaymentProcessor string `json:"payment_processor"`
+	// SessionID is for strip deposits.
+	SessionID string `json:"session_id"`
+}
+
+func (details TransactionDetails) Fee() int {
+	if details.FeeString == "" {
+		return 0
+	}
+
+	i, _ := strconv.ParseInt(details.FeeString, 10, 32)
+	return int(i)
+}
+
+func (details TransactionDetails) FeeAmount() int {
+	if details.FeeAmountString == "" {
+		return 0
+	}
+
+	i, _ := strconv.ParseInt(details.FeeAmountString, 10, 32)
+	return int(i)
+}
+
+type Transaction struct {
+	ID            string             `json:"id"`
+	CreatedAt     time.Time          `json:"created_at"`
+	UserID        string             `json:"user_id"`
+	Type          TransactionType    `json:"type"`
+	Details       TransactionDetails `json:"details"`
+	BalanceOffset int                `json:"balance_offset"`
+	PendingOffset int                `json:"pending_offset"`
+}
+
+type TransactionsResponse struct {
+	Ratelimits   Ratelimits
+	Transactions []Transaction `json:"transactions"`
+	Count        uint          `json:"count"`
+}
+
+type Order string
+
+const (
+	OrderDesc Order = "desc"
+	OrderAsc  Order = "asc"
+)
+
+type TransactionsRequest struct {
+	// Page, default 0 (latest)
+	Page uint
+	// Limit, default 100
+	Limit uint
+	Order Order
+}
+
+func (api *CSFloat) Transactions(apiKey string, payload TransactionsRequest) (*TransactionsResponse, error) {
+	endpoint := "https://csfloat.com/api/v1/me/transactions"
+	request, err := http.NewRequest(
+		http.MethodGet,
+		endpoint,
+		nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	if payload.Limit == 0 {
+		payload.Limit = 100
+	}
+
+	form := url.Values{}
+	form.Set("order", "desc")
+	form.Set("page", strconv.FormatUint(uint64(payload.Page), 10))
+	form.Set("limit", strconv.FormatUint(uint64(payload.Limit), 10))
+	request.URL.RawQuery = form.Encode()
+
+	request.Header.Set("Authorization", apiKey)
+
+	response, err := api.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid return code: %d", response.StatusCode)
+	}
+
+	var result TransactionsResponse
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	ratelimits, err := ratelimitsFrom(response)
+	if err != nil {
+		return nil, fmt.Errorf("error getting ratelimits")
+	}
+
+	result.Ratelimits = ratelimits
+
+	return &result, nil
+}
