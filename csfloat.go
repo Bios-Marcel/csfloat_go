@@ -158,10 +158,10 @@ type Item struct {
 	PaintIndex uint `json:"paint_index"`
 	// PaintSeed determines the skin pattern
 	PaintSeed uint      `json:"paint_seed"`
-	Stickers  []Sticker `json:"stickers"`
-	Charms    []Charm   `json:"keychains"`
-	Fade      *Fade     `json:"fade"`
-	BlueGem   *BlueGem  `json:"blue_gem"`
+	Stickers  []Sticker `json:"stickers,omitempty"`
+	Charms    []Charm   `json:"keychains,omitempty"`
+	Fade      *Fade     `json:"fade,omitempty"`
+	BlueGem   *BlueGem  `json:"blue_gem,omitempty"`
 
 	CharmIndex   uint `json:"keychain_index"`
 	CharmPattern uint `json:"keychain_pattern"`
