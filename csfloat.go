@@ -887,14 +887,15 @@ func errorFrom(response *http.Response) (Error, error) {
 type TransactionType string
 
 const (
-	TransactionTypeDeposit                  TransactionType = "deposit"
-	TransactionTypeContractSold             TransactionType = "contract_sold"
-	TransactionTypeContractPurchased        TransactionType = "contract_purchased"
-	TransactionTypeContractPurchaseRefunded TransactionType = "contract_purchase_refund"
-	TransactionTypeTradeVerified            TransactionType = "trade_verified"
-	TransactionTypeTradeFine                TransactionType = "fine"
-	TransactionTypeBidDeclined              TransactionType = "bid_declined"
-	TransactionTypeBidPosted                TransactionType = "bid_posted"
+	TransactionTypeDeposit                TransactionType = "deposit"
+	TransactionTypeContractSold           TransactionType = "contract_sold"
+	TransactionTypeContractSaleRefund     TransactionType = "contract_sale_refund"
+	TransactionTypeContractPurchased      TransactionType = "contract_purchased"
+	TransactionTypeContractPurchaseRefund TransactionType = "contract_purchase_refund"
+	TransactionTypeTradeVerified          TransactionType = "trade_verified"
+	TransactionTypeFine                   TransactionType = "fine"
+	TransactionTypeBidDeclined            TransactionType = "bid_declined"
+	TransactionTypeBidPosted              TransactionType = "bid_posted"
 )
 
 type TransactionDetailType string
