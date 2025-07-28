@@ -24,10 +24,10 @@ type CSFloat struct {
 func New() *CSFloat {
 	transport := &http.Transport{
 		DialContext: (&net.Dialer{
-			Timeout: 3 * time.Second,
+			Timeout: 15 * time.Second,
 		}).DialContext,
 		TLSHandshakeTimeout:   3 * time.Second,
-		ResponseHeaderTimeout: 3 * time.Second,
+		ResponseHeaderTimeout: 10 * time.Second,
 		ExpectContinueTimeout: 3 * time.Second,
 	}
 
