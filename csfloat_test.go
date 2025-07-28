@@ -52,6 +52,17 @@ func Test_Stall(t *testing.T) {
 	}
 }
 
+func Test_Listing(t *testing.T) {
+	ass := assert.New(t)
+	api := csfloat.New()
+
+	listing, err := api.Listing(apiKey, "869907646323492200")
+	if ass.NoError(err) {
+		t.Log(listing.Item)
+		ass.NotEmpty(listing)
+	}
+}
+
 func Test_Listings(t *testing.T) {
 	ass := assert.New(t)
 	api := csfloat.New()

@@ -218,6 +218,56 @@ func (api *CSFloat) FloatRange(f float32) (float32, float32) {
 	return 0.45, 1.0
 }
 
+type ListingResponse struct {
+	Item       *ListedItem
+	Ratelimits Ratelimits
+}
+
+// Listing returns an existing listing.
+func (api *CSFloat) Listing(apiKey string, listingId string) (*ListingResponse, error) {
+	endpoint := "https://csfloat.com/api/v1/listings"
+	request, err := http.NewRequest(
+		http.MethodGet,
+		fmt.Sprintf("%s/%s", endpoint, listingId),
+		nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	request.Header.Set("Authorization", apiKey)
+
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	response, err := api.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+
+	ratelimits, err := ratelimitsFrom(response)
+	if err != nil {
+		return nil, fmt.Errorf("error getting ratelimits: %w", err)
+	}
+
+	result := &ListingResponse{
+		Ratelimits: ratelimits,
+	}
+
+	if response.StatusCode != 200 {
+		return result, fmt.Errorf("bad response: %d: %s", response.StatusCode, mustString(response))
+	}
+
+	var item ListedItem
+	if err := json.NewDecoder(response.Body).Decode(&item); err != nil {
+		return result, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	result.Item = &item
+
+	return result, nil
+}
+
 func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsResponse, error) {
 	endpoint := "https://csfloat.com/api/v1/listings"
 	request, err := http.NewRequest(
