@@ -785,7 +785,7 @@ func (api *CSFloat) History(apiKey string, payload HistoryRequestPayload) (*Hist
 
 type BuyResponse struct {
 	Ratelimits Ratelimits
-	Message    string `json:"message"`
+	Error      *Error
 }
 
 type BuyRequestPayload struct {
@@ -825,6 +825,12 @@ func (api *CSFloat) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse,
 	}
 
 	if response.StatusCode != http.StatusOK {
+		csfloatError, err := errorFrom(response)
+		if err != nil {
+			return result, fmt.Errorf("invalid status code, couldn't read error message: %d", response.StatusCode)
+		}
+
+		result.Error = &csfloatError
 		return result, fmt.Errorf("invalid return code: %d", response.StatusCode)
 	}
 
