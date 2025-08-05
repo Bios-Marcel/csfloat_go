@@ -27,13 +27,13 @@ func New() *CSFloat {
 			Timeout: 15 * time.Second,
 		}).DialContext,
 		TLSHandshakeTimeout:   3 * time.Second,
-		ResponseHeaderTimeout: 10 * time.Second,
+		ResponseHeaderTimeout: 15 * time.Second,
 		ExpectContinueTimeout: 3 * time.Second,
 	}
 
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   4 * time.Second,
+		Timeout:   15 * time.Second,
 	}
 	return &CSFloat{
 		httpClient: client,
