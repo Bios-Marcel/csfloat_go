@@ -21,11 +21,18 @@ type CSFloat struct {
 	httpClient *http.Client
 }
 
+func NewWithHTTPClient(client *http.Client) *CSFloat {
+	return &CSFloat{
+		httpClient: client,
+	}
+}
+
 func New() *CSFloat {
+	dialer := &net.Dialer{
+		Timeout: 15 * time.Second,
+	}
 	transport := &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout: 15 * time.Second,
-		}).DialContext,
+		DialContext:           dialer.DialContext,
 		TLSHandshakeTimeout:   3 * time.Second,
 		ResponseHeaderTimeout: 15 * time.Second,
 		ExpectContinueTimeout: 3 * time.Second,
@@ -35,9 +42,7 @@ func New() *CSFloat {
 		Transport: transport,
 		Timeout:   15 * time.Second,
 	}
-	return &CSFloat{
-		httpClient: client,
-	}
+	return NewWithHTTPClient(client)
 }
 
 type Stall struct {
