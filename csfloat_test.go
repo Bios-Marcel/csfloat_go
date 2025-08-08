@@ -73,3 +73,14 @@ func Test_Listings(t *testing.T) {
 		ass.NotEmpty(items)
 	}
 }
+
+func Test_BuyIncorrectPrice(t *testing.T) {
+	// ass := assert.New(t)
+	api := csfloat.New()
+
+	response, err := api.Buy(apiKey, csfloat.BuyRequestPayload{
+		ContractIds: []string{"861537163265837281"},
+		TotalPrice:  1,
+	})
+	t.Log(response.Error, err)
+}

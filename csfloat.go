@@ -236,10 +236,6 @@ func (api *CSFloat) Listing(apiKey string, listingId string) (*ListingResponse, 
 
 	request.Header.Set("Authorization", apiKey)
 
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
 	response, err := api.httpClient.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
