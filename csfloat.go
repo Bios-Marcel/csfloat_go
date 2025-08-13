@@ -536,8 +536,8 @@ type AuctionRequest struct {
 }
 
 type ListRequest struct {
-	*BuyNowRequest  `json:",omitempty"`
-	*AuctionRequest `json:",omitempty"`
+	*BuyNowRequest
+	*AuctionRequest
 
 	AssetId     string      `json:"asset_id"`
 	AuctionType ListingType `json:"type"`
@@ -551,7 +551,7 @@ type Error struct {
 }
 
 type ListResponse struct {
-	Item       *ListedItem
+	Item       ListedItem
 	Ratelimits Ratelimits
 	Error      *Error
 }
@@ -598,11 +598,11 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListResponse, err
 		}
 
 		result.Error = &csfloatError
-		return result, fmt.Errorf("invalid status code: %d", response.StatusCode)
+		return result, fmt.Errorf("invalid status code: %d; %v", response.StatusCode, result.Error)
 	}
 
-	if err := json.NewDecoder(response.Body).Decode(result.Item); err != nil {
-		return result, fmt.Errorf("error decoding response, item was relisted: %w", err)
+	if err := json.NewDecoder(response.Body).Decode(&result.Item); err != nil {
+		return result, fmt.Errorf("error decoding response, item was listed: %w", err)
 	}
 
 	return result, nil
