@@ -104,6 +104,8 @@ type ListedItem struct {
 
 type InventoryItem struct {
 	Item
+	// ListingID is only filled for items that are already in the stall.
+	ListingID string        `json:"listing_id"`
 	Reference ItemReference `json:"reference"`
 }
 
@@ -153,6 +155,7 @@ type Item struct {
 	Rarity         Rarity   `json:"rarity"`
 	Type           ItemType `jsob:"type"`
 	MarketHashName string   `json:"market_hash_name"`
+	IconURL        string   `json:"icon_url"`
 
 	Float      float64 `json:"float_value"`
 	IsStattrak bool    `json:"is_stattrak"`
