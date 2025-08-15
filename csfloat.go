@@ -187,11 +187,6 @@ func (item *Item) Category() Category {
 	return Normal
 }
 
-type ListingsResponse struct {
-	Ratelimits Ratelimits
-	Data       []ListedItem `json:"data"`
-}
-
 type Category uint
 
 const (
@@ -227,208 +222,74 @@ func (api *CSFloat) FloatRange(f float32) (float32, float32) {
 }
 
 type ListingResponse struct {
-	Item       *ListedItem
-	Ratelimits Ratelimits
+	GenericResponse
+	Item ListedItem
+}
+
+func (response *ListingResponse) responseBody() any {
+	return &response.Item
 }
 
 // Listing returns an existing listing.
 func (api *CSFloat) Listing(apiKey string, listingId string) (*ListingResponse, error) {
-	endpoint := "https://csfloat.com/api/v1/listings"
-	request, err := http.NewRequest(
+	return handleRequest(
+		api.httpClient,
 		http.MethodGet,
-		fmt.Sprintf("%s/%s", endpoint, listingId),
-		nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	request.Header.Set("Authorization", apiKey)
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
-	}
-
-	ratelimits, err := ratelimitsFrom(response)
-	if err != nil {
-		return nil, fmt.Errorf("error getting ratelimits: %w", err)
-	}
-
-	result := &ListingResponse{
-		Ratelimits: ratelimits,
-	}
-
-	if response.StatusCode != 200 {
-		return result, fmt.Errorf("bad response: %d: %s", response.StatusCode, mustString(response))
-	}
-
-	var item ListedItem
-	if err := json.NewDecoder(response.Body).Decode(&item); err != nil {
-		return result, fmt.Errorf("error decoding response: %w", err)
-	}
-
-	result.Item = &item
-
-	return result, nil
-}
-
-func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsResponse, error) {
-	endpoint := "https://csfloat.com/api/v1/listings"
-	request, err := http.NewRequest(
-		http.MethodGet,
-		endpoint,
-		nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	form := url.Values{}
-	form.Set("type", "buy_now")
-	form.Set("sort_by", "highest_discount")
-	form.Set("limit", "40")
-	if query.ExcludeRare {
-		form.Set("min_ref_qty", strconv.FormatUint(20, 10))
-	}
-	if query.DefIndex > 0 {
-		form.Set("def_index", strconv.FormatUint(uint64(query.DefIndex), 10))
-	}
-	if query.PaintIndex > 0 {
-		form.Set("paint_index", strconv.FormatUint(uint64(query.PaintIndex), 10))
-	}
-	if query.Category > 0 {
-		form.Set("category", strconv.FormatUint(uint64(query.Category), 10))
-	}
-	if query.MinPrice > 0 {
-		form.Set("min_price", fmt.Sprintf("%d", query.MinPrice))
-	}
-	if query.MaxPrice > 0 {
-		form.Set("max_price", fmt.Sprintf("%d", query.MaxPrice))
-	}
-	form.Set("min_float", fmt.Sprintf("%0f", query.MinFloat))
-	// FIXME Set max float to 0.99 to avoid charms and stickers?
-	if query.MaxFloat > 0 {
-		form.Set("max_float", fmt.Sprintf("%0f", query.MaxFloat))
-	}
-	request.URL.RawQuery = form.Encode()
-
-	request.Header.Set("Authorization", apiKey)
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
-	}
-
-	var result ListingsResponse
-	ratelimits, err := ratelimitsFrom(response)
-	if err != nil {
-		return nil, fmt.Errorf("error getting ratelimits: %w", err)
-	}
-	result.Ratelimits = ratelimits
-
-	if response.StatusCode != http.StatusOK {
-		return &result, fmt.Errorf("invalid status code (%d): %s", response.StatusCode, mustString(response))
-	}
-
-	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		return &result, fmt.Errorf("error decoding response: %w", err)
-	}
-
-	return &result, nil
+		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
+		apiKey,
+		nil,
+		url.Values{},
+		&ListingResponse{},
+	)
 }
 
 type StallResponse struct {
+	GenericResponse
 	Stall
-	Ratelimits Ratelimits
+}
+
+func (response *StallResponse) responseBody() any {
+	return &response.Stall
 }
 
 func (api *CSFloat) Stall(apiKey, steamId string) (*StallResponse, error) {
-	endpoint := fmt.Sprintf("https://csfloat.com/api/v1/users/%s/stall", steamId)
-	request, err := http.NewRequest(
+	return handleRequest(
+		api.httpClient,
 		http.MethodGet,
-		endpoint+"?limit=40",
-		nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	request.Header.Set("Authorization", apiKey)
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
-	}
-
-	ratelimits, err := ratelimitsFrom(response)
-	if err != nil {
-		return nil, fmt.Errorf("error getting ratelimits: %w", err)
-	}
-
-	result := &StallResponse{
-		Ratelimits: ratelimits,
-	}
-	if response.StatusCode != 200 {
-		return result, fmt.Errorf("bad response: %d: %s", response.StatusCode, mustString(response))
-	}
-
-	if err := json.NewDecoder(response.Body).Decode(&result.Stall); err != nil {
-		return result, fmt.Errorf("error decoding response: %w", err)
-	}
-
-	return result, nil
-}
-
-func mustString(response *http.Response) string {
-	b, err := io.ReadAll(response.Body)
-	if err != nil {
-		panic(err)
-	}
-	return string(b)
+		fmt.Sprintf("https://csfloat.com/api/v1/users/%s/stall", steamId),
+		apiKey,
+		nil,
+		url.Values{
+			"limit": []string{"40"},
+		},
+		&StallResponse{},
+	)
 }
 
 type InventoryResponse struct {
-	Data       []InventoryItem
-	Ratelimits Ratelimits
+	GenericResponse
+	Data []InventoryItem
 }
 
+func (response *InventoryResponse) responseBody() any {
+	return &response.Data
+}
+
+// Inventory returns all visible (tradable) items from the Steam inventory.
+// This includes items already listed in the stall, those will have a
+// `listing_id` set.
 func (api *CSFloat) Inventory(apiKey string) (*InventoryResponse, error) {
-	endpoint := "https://csfloat.com/api/v1/me/inventory"
-	request, err := http.NewRequest(
+	return handleRequest(
+		api.httpClient,
 		http.MethodGet,
-		endpoint,
-		nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	request.Header.Set("Authorization", apiKey)
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
-	}
-
-	ratelimits, err := ratelimitsFrom(response)
-	if err != nil {
-		return nil, fmt.Errorf("error getting ratelimits: %w", err)
-	}
-
-	result := &InventoryResponse{
-		Ratelimits: ratelimits,
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return result, fmt.Errorf("invalid return code: %d", response.StatusCode)
-	}
-
-	// It returns everything, including what's in stall.
-	// tradeable will always be 1, since steam does not shot untradable items
-	// anymore. Items with a `listing_id` are already in your stall.
-
-	if err := json.NewDecoder(response.Body).Decode(&result.Data); err != nil {
-		return result, fmt.Errorf("error decoding response: %w", err)
-	}
-
-	return result, nil
+		"https://csfloat.com/api/v1/me/inventory",
+		apiKey,
+		nil,
+		url.Values{
+			"limit": []string{"40"},
+		},
+		&InventoryResponse{},
+	)
 }
 
 type MeUser struct {
@@ -437,56 +298,52 @@ type MeUser struct {
 	PendingBalance uint   `json:"pending_balance"`
 }
 
-type Me struct {
+type MeResponse struct {
+	GenericResponse
 	User MeUser `json:"user"`
 }
 
-func (api *CSFloat) Me(apiKey string) (*Me, error) {
-	endpoint := "https://csfloat.com/api/v1/me"
-	request, err := http.NewRequest(
-		http.MethodGet,
-		endpoint,
-		nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	request.Header.Set("Authorization", apiKey)
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
-	}
-
-	var me Me
-	if err := json.NewDecoder(response.Body).Decode(&me); err != nil {
-		return nil, fmt.Errorf("error decoding response: %w", err)
-	}
-	return &me, nil
+func (response *MeResponse) responseBody() any {
+	return response
 }
 
-func (api *CSFloat) Unlist(apiKey, listingId string) error {
-	endpoint := "https://csfloat.com/api/v1/listings"
-	request, err := http.NewRequest(
+func (api *CSFloat) Me(apiKey string) (*MeResponse, error) {
+	return handleRequest(
+		api.httpClient,
+		http.MethodGet,
+		"https://csfloat.com/api/v1/me",
+		apiKey,
+		nil,
+		url.Values{},
+		&MeResponse{},
+	)
+}
+
+type UnlistResponse struct {
+	GenericResponse
+}
+
+func (response *UnlistResponse) responseBody() any {
+	return nil
+}
+
+func (api *CSFloat) Unlist(apiKey, listingId string) (*UnlistResponse, error) {
+	return handleRequest(
+		api.httpClient,
 		http.MethodDelete,
-		fmt.Sprintf("%s/%s", endpoint, listingId),
-		nil)
-	if err != nil {
-		return fmt.Errorf("error creating request: %w", err)
-	}
+		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
+		apiKey,
+		nil,
+		url.Values{},
+		&UnlistResponse{},
+	)
+}
 
-	request.Header.Set("Authorization", apiKey)
+type UpdateListingResponse struct {
+	GenericResponse
+}
 
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return fmt.Errorf("error sending request: %w", err)
-	}
-
-	// FIXME Get body?
-	if response.StatusCode != 200 {
-		return fmt.Errorf("invalid status code: %d", response.StatusCode)
-	}
-
+func (response *UpdateListingResponse) responseBody() any {
 	return nil
 }
 
@@ -494,36 +351,16 @@ type UpdateListingRequest struct {
 	MaxOfferDiscount uint `json:"max_offer_discount"`
 }
 
-func (api *CSFloat) UpdateListing(apiKey, id string, payload UpdateListingRequest) error {
-	var buffer bytes.Buffer
-	if err := json.NewEncoder(&buffer).Encode(payload); err != nil {
-		return fmt.Errorf("error encoding payload: %w", err)
-	}
-
-	endpoint := "https://csfloat.com/api/v1/listings"
-	request, err := http.NewRequest(
+func (api *CSFloat) UpdateListing(apiKey, id string, payload UpdateListingRequest) (*UpdateListingResponse, error) {
+	return handleRequest(
+		api.httpClient,
 		http.MethodPatch,
-		fmt.Sprintf("%s/%s", endpoint, id),
-		&buffer)
-
-	request.Header.Set("Authorization", apiKey)
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Content-Length", strconv.Itoa(buffer.Len()))
-
-	if err != nil {
-		return fmt.Errorf("error creating request: %w", err)
-	}
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return fmt.Errorf("error sending request: %w", err)
-	}
-
-	if response.StatusCode != 200 {
-		return fmt.Errorf("invalid status code: %d", response.StatusCode)
-	}
-
-	return nil
+		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", id),
+		apiKey,
+		payload,
+		url.Values{},
+		&UpdateListingResponse{},
+	)
 }
 
 type BuyNowRequest struct {
@@ -548,64 +385,6 @@ type Error struct {
 	HttpStatus uint   `json:"-"`
 	Code       uint   `json:"code"`
 	Message    string `json:"message"`
-}
-
-type ListResponse struct {
-	Item       ListedItem
-	Ratelimits Ratelimits
-	Error      *Error
-}
-
-// List puts an item up for sale
-func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListResponse, error) {
-	var buffer bytes.Buffer
-	if err := json.NewEncoder(&buffer).Encode(payload); err != nil {
-		return nil, fmt.Errorf("error encoding payload: %w", err)
-	}
-
-	endpoint := "https://csfloat.com/api/v1/listings"
-	request, err := http.NewRequest(
-		http.MethodPost,
-		endpoint,
-		&buffer)
-
-	request.Header.Set("Authorization", apiKey)
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Content-Length", strconv.Itoa(buffer.Len()))
-
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
-	}
-
-	ratelimits, err := ratelimitsFrom(response)
-	if err != nil {
-		return nil, fmt.Errorf("error getting ratelimits: %w", err)
-	}
-
-	result := &ListResponse{
-		Ratelimits: ratelimits,
-	}
-
-	if response.StatusCode != 200 {
-		csfloatError, err := errorFrom(response)
-		if err != nil {
-			return result, fmt.Errorf("invalid status code, couldn't read error message: %d", response.StatusCode)
-		}
-
-		result.Error = &csfloatError
-		return result, fmt.Errorf("invalid status code: %d; %v", response.StatusCode, result.Error)
-	}
-
-	if err := json.NewDecoder(response.Body).Decode(&result.Item); err != nil {
-		return result, fmt.Errorf("error decoding response, item was listed: %w", err)
-	}
-
-	return result, nil
 }
 
 type TradeState string
@@ -661,9 +440,13 @@ type Trade struct {
 }
 
 type TradesResponse struct {
-	Ratelimits Ratelimits
-	Trades     []Trade `json:"trades"`
-	Count      uint    `json:"count"`
+	GenericResponse
+	Trades []Trade `json:"trades"`
+	Count  uint    `json:"count"`
+}
+
+func (response *TradesResponse) responseBody() any {
+	return response
 }
 
 type TradesRequest struct {
@@ -676,15 +459,6 @@ type TradesRequest struct {
 }
 
 func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesResponse, error) {
-	endpoint := "https://csfloat.com/api/v1/me/trades"
-	request, err := http.NewRequest(
-		http.MethodGet,
-		endpoint,
-		nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
 	if payload.Limit == 0 {
 		payload.Limit = 100
 	}
@@ -702,32 +476,16 @@ func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesRespons
 	}
 	form.Set("page", strconv.FormatUint(uint64(payload.Page), 10))
 	form.Set("limit", strconv.FormatUint(uint64(payload.Limit), 10))
-	request.URL.RawQuery = form.Encode()
 
-	request.Header.Set("Authorization", apiKey)
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid return code: %d", response.StatusCode)
-	}
-
-	var result TradesResponse
-	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("error decoding response: %w", err)
-	}
-
-	ratelimits, err := ratelimitsFrom(response)
-	if err != nil {
-		return nil, fmt.Errorf("error getting ratelimits")
-	}
-
-	result.Ratelimits = ratelimits
-
-	return &result, nil
+	return handleRequest(
+		api.httpClient,
+		http.MethodGet,
+		"https://csfloat.com/api/v1/me/trades",
+		apiKey,
+		nil,
+		form,
+		&TradesResponse{},
+	)
 }
 
 type HistoryEntry struct {
@@ -742,54 +500,35 @@ type HistoryRequestPayload struct {
 }
 
 type HistoryResponse struct {
-	Ratelimits Ratelimits
-	Data       []HistoryEntry
+	GenericResponse
+	Data []HistoryEntry
+}
+
+func (response *HistoryResponse) responseBody() any {
+	return &response.Data
 }
 
 func (api *CSFloat) History(apiKey string, payload HistoryRequestPayload) (*HistoryResponse, error) {
-	endpoint := "https://csfloat.com/api/v1/history"
-	request, err := http.NewRequest(
-		http.MethodGet,
-		fmt.Sprintf("%s/%s/sales", endpoint, url.QueryEscape(payload.MarketHashName)),
-		nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
 	form := url.Values{}
 	form.Set("paint_index", strconv.FormatUint(uint64(payload.PaintIndex), 10))
-	request.URL.RawQuery = form.Encode()
 
-	request.Header.Set("Authorization", apiKey)
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
-	}
-
-	ratelimits, err := ratelimitsFrom(response)
-	if err != nil {
-		return nil, fmt.Errorf("error getting ratelimits: %w", err)
-	}
-
-	result := &HistoryResponse{
-		Ratelimits: ratelimits,
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return result, fmt.Errorf("invalid return code: %d", response.StatusCode)
-	}
-
-	if err := json.NewDecoder(response.Body).Decode(&result.Data); err != nil {
-		return result, fmt.Errorf("error decoding response: %w", err)
-	}
-
-	return result, nil
+	return handleRequest(
+		api.httpClient,
+		http.MethodGet,
+		fmt.Sprintf("https://csfloat.com/api/v1/history/%s/sales", url.QueryEscape(payload.MarketHashName)),
+		apiKey,
+		nil,
+		form,
+		&HistoryResponse{},
+	)
 }
 
 type BuyResponse struct {
-	Ratelimits Ratelimits
-	Error      *Error
+	GenericResponse
+}
+
+func (response *BuyResponse) responseBody() any {
+	return nil
 }
 
 type BuyRequestPayload struct {
@@ -798,56 +537,24 @@ type BuyRequestPayload struct {
 }
 
 func (api *CSFloat) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse, error) {
-	endpoint := "https://csfloat.com/api/v1/listings/buy"
-	var buffer bytes.Buffer
-	if err := json.NewEncoder(&buffer).Encode(payload); err != nil {
-		return nil, fmt.Errorf("error encoding payload: %w", err)
-	}
-
-	request, err := http.NewRequest(
+	return handleRequest(
+		api.httpClient,
 		http.MethodPost,
-		endpoint,
-		&buffer)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	request.Header.Set("Authorization", apiKey)
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
-	}
-
-	ratelimits, err := ratelimitsFrom(response)
-	if err != nil {
-		return nil, fmt.Errorf("error getting ratelimits: %w", err)
-	}
-
-	result := &BuyResponse{
-		Ratelimits: ratelimits,
-	}
-
-	if response.StatusCode != http.StatusOK {
-		csfloatError, err := errorFrom(response)
-		if err != nil {
-			return result, fmt.Errorf("invalid status code, couldn't read error message: %d", response.StatusCode)
-		}
-
-		result.Error = &csfloatError
-		return result, fmt.Errorf("invalid return code: %d", response.StatusCode)
-	}
-
-	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		return result, fmt.Errorf("error decoding response: %w", err)
-	}
-
-	return result, nil
+		"https://csfloat.com/api/v1/listings/buy",
+		apiKey,
+		payload,
+		url.Values{},
+		&BuyResponse{},
+	)
 }
 
 type ItemBuyOrdersResponse struct {
-	Ratelimits Ratelimits
-	Data       []ItemBuyOrder
+	GenericResponse
+	Data []ItemBuyOrder
+}
+
+func (response *ItemBuyOrdersResponse) responseBody() any {
+	return &response.Data
 }
 
 type ItemBuyOrder struct {
@@ -860,82 +567,36 @@ type ItemBuyOrder struct {
 }
 
 func (api *CSFloat) ItemBuyOrders(apiKey, listingId string) (*ItemBuyOrdersResponse, error) {
-	endpoint := "https://csfloat.com/api/v1/listings/%s/buy-orders?limit=10"
-	request, err := http.NewRequest(
+	return handleRequest(
+		api.httpClient,
 		http.MethodGet,
-		fmt.Sprint(endpoint, listingId),
-		nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	request.Header.Set("Authorization", apiKey)
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
-	}
-
-	ratelimits, err := ratelimitsFrom(response)
-	if err != nil {
-		return nil, fmt.Errorf("error getting ratelimits: %w", err)
-	}
-
-	result := &ItemBuyOrdersResponse{
-		Ratelimits: ratelimits,
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return result, fmt.Errorf("invalid return code: %d", response.StatusCode)
-	}
-
-	if err := json.NewDecoder(response.Body).Decode(&result.Data); err != nil {
-		return result, fmt.Errorf("error decoding response: %w", err)
-	}
-
-	return result, nil
+		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s/buy-orders", listingId),
+		apiKey,
+		nil,
+		url.Values{"limit": []string{"10"}},
+		&ItemBuyOrdersResponse{},
+	)
 }
 
 type SimilarResponse struct {
-	Ratelimits Ratelimits
-	Data       []*ListedItem
+	GenericResponse
+	Data []*ListedItem
+}
+
+func (response *SimilarResponse) responseBody() any {
+	return &response.Data
 }
 
 func (api *CSFloat) Similar(apiKey, listingId string) (*SimilarResponse, error) {
-	endpoint := "https://csfloat.com/api/v1/listings/%s/similar"
-	request, err := http.NewRequest(
+	return handleRequest(
+		api.httpClient,
 		http.MethodGet,
-		fmt.Sprint(endpoint, listingId),
-		nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	request.Header.Set("Authorization", apiKey)
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
-	}
-
-	ratelimits, err := ratelimitsFrom(response)
-	if err != nil {
-		return nil, fmt.Errorf("error getting ratelimits: %w", err)
-	}
-
-	result := &SimilarResponse{
-		Ratelimits: ratelimits,
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return result, fmt.Errorf("invalid return code: %d", response.StatusCode)
-	}
-
-	if err := json.NewDecoder(response.Body).Decode(&result.Data); err != nil {
-		return result, fmt.Errorf("error decoding response: %w", err)
-	}
-
-	return result, nil
+		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s/similar", listingId),
+		apiKey,
+		nil,
+		url.Values{},
+		&SimilarResponse{},
+	)
 }
 
 func errorFrom(response *http.Response) (Error, error) {
@@ -1019,7 +680,7 @@ type Transaction struct {
 }
 
 type TransactionsResponse struct {
-	Ratelimits   Ratelimits
+	GenericResponse
 	Transactions []Transaction `json:"transactions"`
 	Count        uint          `json:"count"`
 }
@@ -1039,16 +700,11 @@ type TransactionsRequest struct {
 	Order Order
 }
 
-func (api *CSFloat) Transactions(apiKey string, payload TransactionsRequest) (*TransactionsResponse, error) {
-	endpoint := "https://csfloat.com/api/v1/me/transactions"
-	request, err := http.NewRequest(
-		http.MethodGet,
-		endpoint,
-		nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
+func (response *TransactionsResponse) responseBody() any {
+	return response
+}
 
+func (api *CSFloat) Transactions(apiKey string, payload TransactionsRequest) (*TransactionsResponse, error) {
 	if payload.Limit == 0 {
 		payload.Limit = 100
 	}
@@ -1057,30 +713,173 @@ func (api *CSFloat) Transactions(apiKey string, payload TransactionsRequest) (*T
 	form.Set("order", "desc")
 	form.Set("page", strconv.FormatUint(uint64(payload.Page), 10))
 	form.Set("limit", strconv.FormatUint(uint64(payload.Limit), 10))
+
+	return handleRequest(
+		api.httpClient,
+		http.MethodGet,
+		"https://csfloat.com/api/v1/me/transactions",
+		apiKey,
+		nil,
+		form,
+		&TransactionsResponse{},
+	)
+}
+
+type ListResponse struct {
+	GenericResponse
+	Item ListedItem
+}
+
+func (response *ListResponse) responseBody() any {
+	return &response.Item
+}
+
+func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListResponse, error) {
+	return handleRequest(
+		api.httpClient,
+		http.MethodPost,
+		"https://csfloat.com/api/v1/listings",
+		apiKey,
+		payload,
+		url.Values{},
+		&ListResponse{},
+	)
+}
+
+type ListingsResponse struct {
+	GenericResponse
+	Data []ListedItem `json:"data"`
+}
+
+func (response *ListingsResponse) responseBody() any {
+	return response
+}
+
+func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsResponse, error) {
+	form := url.Values{}
+	form.Set("type", "buy_now")
+	form.Set("sort_by", "highest_discount")
+	form.Set("limit", "40")
+	if query.ExcludeRare {
+		form.Set("min_ref_qty", strconv.FormatUint(20, 10))
+	}
+	if query.DefIndex > 0 {
+		form.Set("def_index", strconv.FormatUint(uint64(query.DefIndex), 10))
+	}
+	if query.PaintIndex > 0 {
+		form.Set("paint_index", strconv.FormatUint(uint64(query.PaintIndex), 10))
+	}
+	if query.Category > 0 {
+		form.Set("category", strconv.FormatUint(uint64(query.Category), 10))
+	}
+	if query.MinPrice > 0 {
+		form.Set("min_price", fmt.Sprintf("%d", query.MinPrice))
+	}
+	if query.MaxPrice > 0 {
+		form.Set("max_price", fmt.Sprintf("%d", query.MaxPrice))
+	}
+	form.Set("min_float", fmt.Sprintf("%0f", query.MinFloat))
+	// FIXME Set max float to 0.99 to avoid charms and stickers?
+	if query.MaxFloat > 0 {
+		form.Set("max_float", fmt.Sprintf("%0f", query.MaxFloat))
+	}
+
+	return handleRequest(
+		api.httpClient,
+		http.MethodGet,
+		"https://csfloat.com/api/v1/listings",
+		apiKey,
+		nil,
+		form,
+		&ListingsResponse{},
+	)
+}
+
+type GenericResponse struct {
+	// Ratelimits will have zero values if the request fails completly.
+	Ratelimits Ratelimits `json:"-"`
+	// Error will only be set if an error happened after successfully reaching
+	// the server. However, there might still be other errors, for example when
+	// decoding the server response.
+	Error *Error `json:"-"`
+}
+
+func (response *GenericResponse) setRatelimits(ratelimits *Ratelimits) {
+	response.Ratelimits = *ratelimits
+}
+func (response *GenericResponse) setError(err *Error) {
+	response.Error = err
+}
+
+type Response interface {
+	setError(*Error)
+	setRatelimits(*Ratelimits)
+	// responseBody must return any pointer value that we'll JSON-decode into.
+	responseBody() any
+}
+
+func handleRequest[T Response](
+	client *http.Client,
+	method string,
+	endpoint string,
+	apiKey string,
+	payload any,
+	form url.Values,
+	result T,
+) (T, error) {
+	var body io.Reader
+	var buffer bytes.Buffer
+	if payload != nil {
+		if err := json.NewEncoder(&buffer).Encode(payload); err != nil {
+			return result, fmt.Errorf("error encoding payload: %w", err)
+		}
+		body = &buffer
+	}
+
+	request, err := http.NewRequest(
+		method,
+		endpoint,
+		body)
+
 	request.URL.RawQuery = form.Encode()
 
 	request.Header.Set("Authorization", apiKey)
+	if body != nil {
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Content-Length", strconv.Itoa(buffer.Len()))
+	}
 
-	response, err := api.httpClient.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
+		return result, fmt.Errorf("error creating request: %w", err)
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid return code: %d", response.StatusCode)
-	}
-
-	var result TransactionsResponse
-	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("error decoding response: %w", err)
+	response, err := client.Do(request)
+	if err != nil {
+		return result, fmt.Errorf("error sending request: %w", err)
 	}
 
 	ratelimits, err := ratelimitsFrom(response)
 	if err != nil {
-		return nil, fmt.Errorf("error getting ratelimits")
+		return result, fmt.Errorf("error getting ratelimits: %w", err)
+	}
+	result.setRatelimits(&ratelimits)
+
+	if response.StatusCode != http.StatusOK {
+		csfloatError, err := errorFrom(response)
+		if err != nil {
+			return result, fmt.Errorf("invalid status code, couldn't read error message: %d",
+				response.StatusCode)
+		}
+		result.setError(&csfloatError)
+
+		return result, fmt.Errorf("invalid status code: %d; %v", response.StatusCode, csfloatError)
 	}
 
-	result.Ratelimits = ratelimits
+	if target := result.responseBody(); target != nil {
+		if err := json.NewDecoder(response.Body).Decode(result.responseBody()); err != nil {
+			return result, fmt.Errorf("error decoding response: %w", err)
+		}
+	}
 
-	return &result, nil
+	return result, nil
 }

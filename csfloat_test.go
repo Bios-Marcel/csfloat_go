@@ -1,14 +1,54 @@
 package csfloat_test
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"log"
+	"net"
+	"net/http"
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	csfloat "github.com/Bios-Marcel/csfloat_go"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestDummy(t *testing.T) {
+	t.Skip()
+
+	dialer := &net.Dialer{
+		Timeout: 15 * time.Second,
+	}
+	transport := &http.Transport{
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			conn, err := dialer.DialContext(ctx, "tcp4", addr)
+			if err == nil {
+				log.Println(conn.RemoteAddr().String())
+				return conn, nil
+			}
+
+			return nil, fmt.Errorf("no IPv6 address could be dialed for %s", addr)
+		},
+		TLSHandshakeTimeout:   3 * time.Second,
+		ResponseHeaderTimeout: 15 * time.Second,
+		ExpectContinueTimeout: 3 * time.Second,
+	}
+
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   15 * time.Second,
+	}
+
+	request, err := http.NewRequest("GET", "https://csfloat.com", nil)
+	if err != nil {
+		panic(err)
+	}
+	client.Do(request)
+
+}
 
 func TestJsonEncoder(t *testing.T) {
 	b := csfloat.ListRequest{
@@ -21,7 +61,7 @@ func TestJsonEncoder(t *testing.T) {
 }
 
 var apiKey = os.Getenv("CSFLOAT_API_KEY")
-var me = sync.OnceValue(func() *csfloat.Me {
+var me = sync.OnceValue(func() *csfloat.MeResponse {
 	api := csfloat.New()
 	me, err := api.Me(apiKey)
 	if err != nil {
