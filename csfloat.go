@@ -17,6 +17,11 @@ import (
 // its unachievable to reduce the fee, so this is fine for now.
 const Fee float64 = 2
 
+const (
+	ErrorCodeAlreadySold  = 4
+	ErrorCodePriceChanged = 15
+)
+
 type CSFloat struct {
 	httpClient *http.Client
 }
