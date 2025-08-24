@@ -18,8 +18,15 @@ import (
 const Fee float64 = 2
 
 const (
-	ErrorCodeAlreadySold  = 4
-	ErrorCodePriceChanged = 15
+	ErrorCodeAlreadySold = 4
+	// ErrorCodeInvalidPurchaseState is thrown along HTTP status code 422. It
+	// is unclear when exactly, but it seems similar to AlreadySold. It might
+	// be unlisted.
+	ErrorCodeInvalidPurchaseState = 6
+	ErrorCodePriceChanged         = 15
+	// ErrorCodeSalesHistoryNotAvailable implies that the history for a certain
+	// item was disabled. This is done for cases for example.
+	ErrorCodeSalesHistoryNotAvailable = 200
 )
 
 type CSFloat struct {
@@ -614,6 +621,7 @@ type TransactionType string
 
 const (
 	TransactionTypeDeposit                TransactionType = "deposit"
+	TransactionTypeWithdrawal             TransactionType = "withdrawal"
 	TransactionTypeContractSold           TransactionType = "contract_sold"
 	TransactionTypeContractSaleRefund     TransactionType = "contract_sale_refund"
 	TransactionTypeContractPurchased      TransactionType = "contract_purchased"
