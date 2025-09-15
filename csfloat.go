@@ -169,9 +169,12 @@ type Item struct {
 	MarketHashName string   `json:"market_hash_name"`
 	IconURL        string   `json:"icon_url"`
 
-	Float      float64 `json:"float_value"`
-	IsStattrak bool    `json:"is_stattrak"`
-	IsSouvenir bool    `json:"is_souvenir"`
+	// InspectLink is used to open CS. However, CSFloat also uses it as a key to
+	// filter buy orders for a concrete asset.
+	InspectLink string  `json:"inspect_link"`
+	Float       float64 `json:"float_value"`
+	IsStattrak  bool    `json:"is_stattrak"`
+	IsSouvenir  bool    `json:"is_souvenir"`
 	// DefIndex is the weapon type
 	DefIndex uint `json:"def_index"`
 	// PaintIndex is the skin type
@@ -578,7 +581,37 @@ type ItemBuyOrder struct {
 	Price      uint   `json:"price"`
 }
 
-func (api *CSFloat) ItemBuyOrders(apiKey, listingId string) (*ItemBuyOrdersResponse, error) {
+func (api *CSFloat) ItemBuyOrders(apiKey string, item *Item) (*ItemBuyOrdersResponse, error) {
+	formValues := url.Values{"limit": []string{"3"}}
+	var body any
+	var url, method string
+
+	// This items with an inspect can usually have patterns or similar, buy
+	// orders can be for concrete floats or patterns.
+	if item.Type == TypeSkin {
+		formValues.Set("url", item.InspectLink)
+		method = http.MethodGet
+		url = "https://csfloat.com/api/v1/buy-orders/item"
+	} else {
+		body = map[string]string{
+			"market_hash_name": item.MarketHashName,
+		}
+		// Well ... this is being abused for providing a body it seems.
+		method = http.MethodPost
+		url = "https://csfloat.com/api/v1/buy-orders/similar-orders"
+	}
+	return handleRequest(
+		api.httpClient,
+		method,
+		url,
+		apiKey,
+		body,
+		formValues,
+		&ItemBuyOrdersResponse{},
+	)
+}
+
+func (api *CSFloat) ListingBuyOrders(apiKey, listingId string) (*ItemBuyOrdersResponse, error) {
 	return handleRequest(
 		api.httpClient,
 		http.MethodGet,
