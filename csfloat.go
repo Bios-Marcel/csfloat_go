@@ -563,9 +563,18 @@ func (api *CSFloat) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse,
 	)
 }
 
+type SimpleItemBuyOrdersResponse struct {
+	GenericResponse
+	Data []ItemBuyOrder `json:"data"`
+}
+
+func (response *SimpleItemBuyOrdersResponse) responseBody() any {
+	return response
+}
+
 type ItemBuyOrdersResponse struct {
 	GenericResponse
-	Data []ItemBuyOrder
+	Data []ItemBuyOrder `json:"data"`
 }
 
 func (response *ItemBuyOrdersResponse) responseBody() any {
@@ -583,23 +592,32 @@ type ItemBuyOrder struct {
 
 func (api *CSFloat) ItemBuyOrders(apiKey string, item *Item) (*ItemBuyOrdersResponse, error) {
 	formValues := url.Values{"limit": []string{"3"}}
-	var body any
-	var url, method string
 
-	// This items with an inspect can usually have patterns or similar, buy
-	// orders can be for concrete floats or patterns.
-	if item.Type == TypeSkin {
-		formValues.Set("url", item.InspectLink)
-		method = http.MethodGet
-		url = "https://csfloat.com/api/v1/buy-orders/item"
-	} else {
-		body = map[string]string{
-			"market_hash_name": item.MarketHashName,
-		}
-		// Well ... this is being abused for providing a body it seems.
-		method = http.MethodPost
-		url = "https://csfloat.com/api/v1/buy-orders/similar-orders"
+	formValues.Set("url", item.InspectLink)
+	method := http.MethodGet
+	url := "https://csfloat.com/api/v1/buy-orders/item"
+
+	return handleRequest(
+		api.httpClient,
+		method,
+		url,
+		apiKey,
+		nil,
+		formValues,
+		&ItemBuyOrdersResponse{},
+	)
+}
+
+func (api *CSFloat) SimpleItemBuyOrders(apiKey string, item *Item) (*SimpleItemBuyOrdersResponse, error) {
+	formValues := url.Values{"limit": []string{"3"}}
+
+	body := map[string]string{
+		"market_hash_name": item.MarketHashName,
 	}
+	// Well ... this is being abused for providing a body it seems.
+	method := http.MethodPost
+	url := "https://csfloat.com/api/v1/buy-orders/similar-orders"
+
 	return handleRequest(
 		api.httpClient,
 		method,
@@ -607,7 +625,7 @@ func (api *CSFloat) ItemBuyOrders(apiKey string, item *Item) (*ItemBuyOrdersResp
 		apiKey,
 		body,
 		formValues,
-		&ItemBuyOrdersResponse{},
+		&SimpleItemBuyOrdersResponse{},
 	)
 }
 
