@@ -219,6 +219,7 @@ type ListingsRequest struct {
 	Category    Category
 	DefIndex    uint
 	PaintIndex  uint
+	CharmIndex  uint
 }
 
 // FloatRange returns the float range for the given quality (fn, mw, ...).
@@ -842,10 +843,15 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 	if query.MaxPrice > 0 {
 		form.Set("max_price", fmt.Sprintf("%d", query.MaxPrice))
 	}
-	form.Set("min_float", fmt.Sprintf("%0f", query.MinFloat))
+	if query.MinFloat > 0 {
+		form.Set("min_float", fmt.Sprintf("%0f", query.MinFloat))
+	}
 	// FIXME Set max float to 0.99 to avoid charms and stickers?
 	if query.MaxFloat > 0 {
 		form.Set("max_float", fmt.Sprintf("%0f", query.MaxFloat))
+	}
+	if query.CharmIndex > 0 {
+		form.Set("keychain_index", fmt.Sprintf("%d", query.CharmIndex))
 	}
 
 	return handleRequest(
