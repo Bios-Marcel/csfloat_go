@@ -219,6 +219,7 @@ type ListingsRequest struct {
 	Category    Category
 	DefIndex    uint
 	PaintIndex  uint
+	PaintSeed   []uint
 	CharmIndex  uint
 }
 
@@ -834,6 +835,9 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 	if query.PaintIndex > 0 {
 		form.Set("paint_index", strconv.FormatUint(uint64(query.PaintIndex), 10))
 	}
+	if len(query.PaintSeed) > 0 {
+		form.Set("paint_seed", concatInts(query.PaintSeed...))
+	}
 	if query.Category > 0 {
 		form.Set("category", strconv.FormatUint(uint64(query.Category), 10))
 	}
@@ -952,4 +956,15 @@ func handleRequest[T Response](
 	}
 
 	return result, nil
+}
+
+func concatInts[Number int | uint](n ...Number) string {
+	var b strings.Builder
+	for i, val := range n {
+		if i != 0 {
+			b.WriteRune(',')
+		}
+		b.WriteString(fmt.Sprintf("%d", val))
+	}
+	return b.String()
 }
