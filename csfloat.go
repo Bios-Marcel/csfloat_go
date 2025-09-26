@@ -176,7 +176,8 @@ type Item struct {
 	IsStattrak  bool    `json:"is_stattrak"`
 	IsSouvenir  bool    `json:"is_souvenir"`
 	// DefIndex is the weapon type
-	DefIndex uint `json:"def_index"`
+	DefIndex     uint `json:"def_index"`
+	StickerIndex uint `json:"sticker_index"`
 	// PaintIndex is the skin type
 	PaintIndex uint `json:"paint_index"`
 	// PaintSeed determines the skin pattern
