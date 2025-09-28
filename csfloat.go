@@ -141,8 +141,10 @@ type Charm struct {
 type ItemType string
 
 const (
-	TypeCharm ItemType = "charm"
-	TypeSkin  ItemType = "skin"
+	TypeCharm     ItemType = "charm"
+	TypeContainer ItemType = "container"
+	TypeSticker   ItemType = "sticker"
+	TypeSkin      ItemType = "skin"
 )
 
 type Fade struct {
