@@ -124,3 +124,14 @@ func Test_BuyIncorrectPrice(t *testing.T) {
 	})
 	t.Log(response.Error, err)
 }
+
+func Test_BulkDelist(t *testing.T) {
+	api := csfloat.New()
+
+	response, err := api.BulkUnlist(apiKey, []string{
+		"892909870007846613",
+		"892909870007846614",
+		"892909870012040919",
+	}...)
+	t.Log(response.Error, err)
+}

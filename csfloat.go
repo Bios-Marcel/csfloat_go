@@ -3,6 +3,7 @@ package csfloat
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -338,6 +339,35 @@ func (api *CSFloat) Me(apiKey string) (*MeResponse, error) {
 		nil,
 		url.Values{},
 		&MeResponse{},
+	)
+}
+
+func (api *CSFloat) BulkUnlist(apiKey string, listingId ...string) (*GenericResponse, error) {
+	if len(listingId) == 0 {
+		return nil, errors.New("no listings supplied")
+	}
+	if len(listingId) == 1 {
+		return handleRequest(
+			api.httpClient,
+			http.MethodDelete,
+			fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
+			apiKey,
+			nil,
+			url.Values{},
+			&GenericResponse{},
+		)
+	}
+
+	return handleRequest(
+		api.httpClient,
+		string(http.MethodPatch),
+		"https://csfloat.com/api/v1/listings/bulk-delist",
+		apiKey,
+		map[string][]string{
+			"contract_ids": listingId,
+		},
+		url.Values{},
+		&GenericResponse{},
 	)
 }
 
@@ -860,7 +890,7 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 		form.Set("max_float", fmt.Sprintf("%0f", query.MaxFloat))
 	}
 	if query.StickerIndex > 0 {
-		form.Set("sticker_index", fmt.Sprintf("%d", query.StickerIndex))
+		form.Set("keychain_index", fmt.Sprintf("%d", query.CharmIndex))
 	}
 	if query.CharmIndex > 0 {
 		form.Set("keychain_index", fmt.Sprintf("%d", query.CharmIndex))
@@ -891,6 +921,10 @@ func (response *GenericResponse) setRatelimits(ratelimits *Ratelimits) {
 }
 func (response *GenericResponse) setError(err *Error) {
 	response.Error = err
+}
+func (response *GenericResponse) responseBody() any {
+	// By default, we don't carry any data here.
+	return nil
 }
 
 type Response interface {
