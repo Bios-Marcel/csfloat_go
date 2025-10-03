@@ -890,7 +890,7 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 		form.Set("max_float", fmt.Sprintf("%0f", query.MaxFloat))
 	}
 	if query.StickerIndex > 0 {
-		form.Set("keychain_index", fmt.Sprintf("%d", query.CharmIndex))
+		form.Set("sticker_index", fmt.Sprintf("%d", query.StickerIndex))
 	}
 	if query.CharmIndex > 0 {
 		form.Set("keychain_index", fmt.Sprintf("%d", query.CharmIndex))
