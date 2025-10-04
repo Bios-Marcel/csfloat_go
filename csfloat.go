@@ -174,10 +174,11 @@ type Item struct {
 
 	// InspectLink is used to open CS. However, CSFloat also uses it as a key to
 	// filter buy orders for a concrete asset.
-	InspectLink string  `json:"inspect_link"`
-	Float       float64 `json:"float_value"`
-	IsStattrak  bool    `json:"is_stattrak"`
-	IsSouvenir  bool    `json:"is_souvenir"`
+	InspectLink  string  `json:"inspect_link"`
+	ScreenshotID string  `json:"cs2_screenshot_id"`
+	Float        float64 `json:"float_value"`
+	IsStattrak   bool    `json:"is_stattrak"`
+	IsSouvenir   bool    `json:"is_souvenir"`
 	// DefIndex is the weapon type
 	DefIndex     uint `json:"def_index"`
 	StickerIndex uint `json:"sticker_index"`
@@ -193,6 +194,17 @@ type Item struct {
 
 	CharmIndex   uint `json:"keychain_index"`
 	CharmPattern uint `json:"keychain_pattern"`
+}
+
+func (item *Item) ScreenshotURL(playside bool) string {
+	if item.ScreenshotID == "" {
+		return ""
+	}
+
+	if playside {
+		return fmt.Sprintf("https://csfloat.pics/m/%s/playside.png?v=3", item.ScreenshotID)
+	}
+	return fmt.Sprintf("https://csfloat.pics/m/%s/backside.png?v=3", item.ScreenshotID)
 }
 
 // Category will map to the query category matching this item. This is required
