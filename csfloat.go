@@ -410,11 +410,34 @@ func (response *UpdateListingResponse) responseBody() any {
 	return nil
 }
 
+func (api *CSFloat) UpdatePrivate(apiKey, id string, private bool) (*UpdateListingResponse, error) {
+	return api.updateListing(apiKey, id, map[string]any{"private": private})
+}
+
+func (api *CSFloat) UpdateDescription(apiKey, id string, description string) (*UpdateListingResponse, error) {
+	return api.updateListing(apiKey, id, map[string]any{"description": description})
+}
+
+func (api *CSFloat) UpdateDiscount(apiKey, id string, discount uint) (*UpdateListingResponse, error) {
+	return api.updateListing(apiKey, id, map[string]any{"max_offer_discount": discount})
+}
+
+func (api *CSFloat) UpdatePrice(apiKey, id string, price uint) (*UpdateListingResponse, error) {
+	return api.updateListing(apiKey, id, map[string]any{"price": price})
+}
+
 type UpdateListingRequest struct {
+	Private          bool `json:"private"`
+	Description      uint `json:"description"`
 	MaxOfferDiscount uint `json:"max_offer_discount"`
+	Price            uint `json:"price"`
 }
 
 func (api *CSFloat) UpdateListing(apiKey, id string, payload UpdateListingRequest) (*UpdateListingResponse, error) {
+	return api.updateListing(apiKey, id, payload)
+}
+
+func (api *CSFloat) updateListing(apiKey, id string, payload any) (*UpdateListingResponse, error) {
 	return handleRequest(
 		api.httpClient,
 		http.MethodPatch,
