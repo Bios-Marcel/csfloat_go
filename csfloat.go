@@ -442,6 +442,7 @@ type ListRequest struct {
 	AssetId     string      `json:"asset_id"`
 	AuctionType ListingType `json:"type"`
 	Description string      `json:"description"`
+	Private     bool        `json:"private"`
 }
 
 type Error struct {
