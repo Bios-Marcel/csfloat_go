@@ -57,8 +57,9 @@ func New() *CSFloat {
 }
 
 type Stall struct {
-	Items []ListedItem `json:"data"`
-	Count int          `json:"total_count"`
+	Items      []ListedItem `json:"data"`
+	Count      int          `json:"total_count"`
+	TotalPrice uint         `json:"total_price"`
 }
 
 type ListingType string
