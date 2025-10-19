@@ -353,6 +353,20 @@ func (api *CSFloat) Me(apiKey string) (*MeResponse, error) {
 	)
 }
 
+func (api *CSFloat) BulkCancel(apiKey string, tradeIds ...string) (*GenericResponse, error) {
+	return handleRequest(
+		api.httpClient,
+		http.MethodPost,
+		"https://csfloat.com/api/v1/trades/bulk/cancel",
+		apiKey,
+		map[string]any{
+			"trade_ids": tradeIds,
+		},
+		url.Values{},
+		&GenericResponse{},
+	)
+}
+
 func (api *CSFloat) BulkUnlist(apiKey string, listingId ...string) (*GenericResponse, error) {
 	if len(listingId) == 0 {
 		return nil, errors.New("no listings supplied")
