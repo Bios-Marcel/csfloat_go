@@ -668,6 +668,7 @@ func (response *ItemBuyOrdersResponse) responseBody() any {
 }
 
 type ItemBuyOrder struct {
+	ID string `json:"id"`
 	// MarketHashName is only used for simple buy orders.
 	MarketHashName string `json:"market_hash_name"`
 	// Expression is only used for advanced buy orders.
@@ -953,5 +954,44 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 		nil,
 		form,
 		&ListingsResponse{},
+	)
+}
+
+type CreateSimpleBuyOrderPayload struct {
+	MarketHashName string `json:"market_hash_name"`
+	MaxPrice       uint   `json:"max_price"`
+	Quantity       uint   `json:"quantity"`
+}
+
+type CreateSimpleBuyOrderResponse struct {
+	GenericResponse
+	ItemBuyOrder
+}
+
+func (response *CreateSimpleBuyOrderResponse) responseBody() any {
+	return response
+}
+
+func (api *CSFloat) CreateSimpleBuyOrder(apiKey string, payload CreateSimpleBuyOrderPayload) (*CreateSimpleBuyOrderResponse, error) {
+	return handleRequest(
+		api.httpClient,
+		string(http.MethodPost),
+		"https://csfloat.com/api/v1/buy-orders",
+		apiKey,
+		payload,
+		url.Values{},
+		&CreateSimpleBuyOrderResponse{},
+	)
+}
+
+func (api *CSFloat) DeleteBuyOrder(apiKey string, id string) (*GenericResponse, error) {
+	return handleRequest(
+		api.httpClient,
+		http.MethodDelete,
+		fmt.Sprintf("https://csfloat.com/api/v1/buy-orders/%s", id),
+		apiKey,
+		nil,
+		url.Values{},
+		&GenericResponse{},
 	)
 }
