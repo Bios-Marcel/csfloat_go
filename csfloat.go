@@ -611,7 +611,12 @@ func (response *HistoryResponse) responseBody() any {
 
 func (api *CSFloat) History(apiKey string, payload HistoryRequestPayload) (*HistoryResponse, error) {
 	form := url.Values{}
-	form.Set("paint_index", strconv.FormatUint(uint64(payload.PaintIndex), 10))
+
+	// Passing zero for a case / sticker will yield in an empty result.
+	// paint_index 0 for weapons is supposedly the default skin.
+	if payload.PaintIndex != 0 {
+		form.Set("paint_index", strconv.FormatUint(uint64(payload.PaintIndex), 10))
+	}
 
 	return handleRequest(
 		api.httpClient,
