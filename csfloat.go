@@ -145,6 +145,7 @@ const (
 	TypeContainer ItemType = "container"
 	TypeSticker   ItemType = "sticker"
 	TypeSkin      ItemType = "skin"
+	TypeAgent     ItemType = "agent"
 )
 
 type Fade struct {
