@@ -418,11 +418,7 @@ func (api *CSFloat) Unlist(apiKey, listingId string) (*UnlistResponse, error) {
 }
 
 type UpdateListingResponse struct {
-	GenericResponse
-}
-
-func (response *UpdateListingResponse) responseBody() any {
-	return nil
+	ListingResponse
 }
 
 func (api *CSFloat) UpdatePrivate(apiKey, id string, private bool) (*UpdateListingResponse, error) {
@@ -442,10 +438,10 @@ func (api *CSFloat) UpdatePrice(apiKey, id string, price uint) (*UpdateListingRe
 }
 
 type UpdateListingRequest struct {
-	Private          bool `json:"private"`
-	Description      uint `json:"description"`
-	MaxOfferDiscount uint `json:"max_offer_discount"`
-	Price            uint `json:"price"`
+	Private          bool   `json:"private"`
+	Description      string `json:"description"`
+	MaxOfferDiscount uint   `json:"max_offer_discount"`
+	Price            uint   `json:"price"`
 }
 
 func (api *CSFloat) UpdateListing(apiKey, id string, payload UpdateListingRequest) (*UpdateListingResponse, error) {
