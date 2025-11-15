@@ -125,7 +125,7 @@ type Sticker struct {
 	Index     uint      `json:"stickerId"`
 	Name      string    `json:"name"`
 	Reference Reference `json:"reference"`
-	ItemURL   string    `json:"item_url"`
+	IconURL   string    `json:"icon_url"`
 	Wear      float32   `json:"wear"`
 	Rotation  float32   `json:"rotation"`
 }
@@ -135,6 +135,7 @@ type Charm struct {
 	Index     uint      `json:"stickerId"`
 	Pattern   uint      `json:"pattern"`
 	Name      string    `json:"name"`
+	IconURL   string    `json:"icon_url"`
 	Reference Reference `json:"reference"`
 }
 
