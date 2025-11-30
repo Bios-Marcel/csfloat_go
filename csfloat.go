@@ -104,6 +104,7 @@ type Reference struct {
 
 type ListedItem struct {
 	ID               string        `json:"id"`
+	CreatedAt        time.Time     `json:"created_at"`
 	Price            int           `json:"price"`
 	Item             Item          `json:"item"`
 	Reference        ItemReference `json:"reference"`
