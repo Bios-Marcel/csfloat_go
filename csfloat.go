@@ -109,10 +109,10 @@ type ListedItem struct {
 	Item             Item          `json:"item"`
 	Reference        ItemReference `json:"reference"`
 	Type             ListingType   `json:"type"`
-	Description      string        `json:"description"`
+	Description      string        `json:"description,omitempty"`
 	Private          bool          `json:"private"`
-	MaxOfferDiscount uint          `json:"max_offer_discount"`
-	Watchers         uint          `json:"watchers"`
+	MaxOfferDiscount uint          `json:"max_offer_discount.omitempty"`
+	Watchers         uint          `json:"watchers,omitempty"`
 }
 
 type InventoryItem struct {
@@ -133,11 +133,12 @@ type Sticker struct {
 
 type Charm struct {
 	// CharmId is called stickerId, not a typo.
-	Index     uint      `json:"stickerId"`
-	Pattern   uint      `json:"pattern"`
-	Name      string    `json:"name"`
-	IconURL   string    `json:"icon_url"`
-	Reference Reference `json:"reference"`
+	Index          uint      `json:"stickerId"`
+	Pattern        uint      `json:"pattern,omitempty"`
+	WrappedSticker uint      `json:"wrapped_sticker,omitempty"`
+	Name           string    `json:"name"`
+	IconURL        string    `json:"icon_url"`
+	Reference      Reference `json:"reference"`
 }
 
 type ItemType string
@@ -176,26 +177,26 @@ type Item struct {
 
 	// InspectLink is used to open CS. However, CSFloat also uses it as a key to
 	// filter buy orders for a concrete asset.
-	InspectLink  string  `json:"inspect_link"`
-	ScreenshotID string  `json:"cs2_screenshot_id"`
+	InspectLink  string  `json:"inspect_link,omitempty"`
+	ScreenshotID string  `json:"cs2_screenshot_id,omitempty"`
 	Float        float64 `json:"float_value"`
 	IsStattrak   bool    `json:"is_stattrak"`
 	IsSouvenir   bool    `json:"is_souvenir"`
 	// DefIndex is the weapon type
-	DefIndex     uint `json:"def_index"`
-	StickerIndex uint `json:"sticker_index"`
+	DefIndex     uint `json:"def_index,omitempty"`
+	StickerIndex uint `json:"sticker_index,omitempty"`
 	// PaintIndex is the skin type
-	PaintIndex uint `json:"paint_index"`
+	PaintIndex uint `json:"paint_index,omitempty"`
 	// PaintSeed determines the skin pattern
-	PaintSeed  uint      `json:"paint_seed"`
+	PaintSeed  uint      `json:"paint_seed,omitempty"`
 	Stickers   []Sticker `json:"stickers,omitempty"`
 	Charms     []Charm   `json:"keychains,omitempty"`
 	Fade       *Fade     `json:"fade,omitempty"`
 	BlueGem    *BlueGem  `json:"blue_gem,omitempty"`
 	Collection string    `json:"collection"`
 
-	CharmIndex   uint `json:"keychain_index"`
-	CharmPattern uint `json:"keychain_pattern"`
+	CharmIndex   uint `json:"keychain_index,omitempty"`
+	CharmPattern uint `json:"keychain_pattern,omitempty"`
 }
 
 func (item *Item) ScreenshotURL(playside bool) string {
