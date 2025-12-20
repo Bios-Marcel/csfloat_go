@@ -29,7 +29,8 @@ const (
 )
 
 type CSFloat struct {
-	httpClient *http.Client
+	httpClient    *http.Client
+	defaultApiKey string
 }
 
 func NewWithHTTPClient(client *http.Client) *CSFloat {
@@ -54,6 +55,17 @@ func New() *CSFloat {
 		Timeout:   15 * time.Second,
 	}
 	return NewWithHTTPClient(client)
+}
+
+func (api *CSFloat) SetDefaultAPIKey(key string) {
+	api.defaultApiKey = key
+}
+
+func (api *CSFloat) overrideAPIKey(overrideKey string) string {
+	if overrideKey != "" {
+		return overrideKey
+	}
+	return api.defaultApiKey
 }
 
 type Stall struct {
@@ -274,7 +286,7 @@ func (api *CSFloat) Listing(apiKey string, listingId string) (*ListingResponse, 
 		api.httpClient,
 		http.MethodGet,
 		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		url.Values{},
 		&ListingResponse{},
@@ -295,7 +307,7 @@ func (api *CSFloat) Stall(apiKey, steamId string) (*StallResponse, error) {
 		api.httpClient,
 		http.MethodGet,
 		fmt.Sprintf("https://csfloat.com/api/v1/users/%s/stall", steamId),
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		url.Values{
 			"limit": []string{"40"},
@@ -321,7 +333,7 @@ func (api *CSFloat) Inventory(apiKey string) (*InventoryResponse, error) {
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/me/inventory",
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		url.Values{
 			"limit": []string{"40"},
@@ -350,7 +362,7 @@ func (api *CSFloat) Me(apiKey string) (*MeResponse, error) {
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/me",
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		url.Values{},
 		&MeResponse{},
@@ -362,7 +374,7 @@ func (api *CSFloat) BulkCancel(apiKey string, tradeIds ...string) (*GenericRespo
 		api.httpClient,
 		http.MethodPost,
 		"https://csfloat.com/api/v1/trades/bulk/cancel",
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		map[string]any{
 			"trade_ids": tradeIds,
 		},
@@ -380,7 +392,7 @@ func (api *CSFloat) BulkUnlist(apiKey string, listingId ...string) (*GenericResp
 			api.httpClient,
 			http.MethodDelete,
 			fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
-			apiKey,
+			api.overrideAPIKey(apiKey),
 			nil,
 			url.Values{},
 			&GenericResponse{},
@@ -391,7 +403,7 @@ func (api *CSFloat) BulkUnlist(apiKey string, listingId ...string) (*GenericResp
 		api.httpClient,
 		string(http.MethodPatch),
 		"https://csfloat.com/api/v1/listings/bulk-delist",
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		map[string][]string{
 			"contract_ids": listingId,
 		},
@@ -413,7 +425,7 @@ func (api *CSFloat) Unlist(apiKey, listingId string) (*UnlistResponse, error) {
 		api.httpClient,
 		http.MethodDelete,
 		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		url.Values{},
 		&UnlistResponse{},
@@ -456,7 +468,7 @@ func (api *CSFloat) updateListing(apiKey, id string, payload any) (*UpdateListin
 		api.httpClient,
 		http.MethodPatch,
 		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", id),
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		payload,
 		url.Values{},
 		&UpdateListingResponse{},
@@ -582,7 +594,7 @@ func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesRespons
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/me/trades",
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		form,
 		&TradesResponse{},
@@ -622,7 +634,7 @@ func (api *CSFloat) History(apiKey string, payload HistoryRequestPayload) (*Hist
 		api.httpClient,
 		http.MethodGet,
 		fmt.Sprintf("https://csfloat.com/api/v1/history/%s/sales", url.QueryEscape(payload.MarketHashName)),
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		form,
 		&HistoryResponse{},
@@ -647,7 +659,7 @@ func (api *CSFloat) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse,
 		api.httpClient,
 		http.MethodPost,
 		"https://csfloat.com/api/v1/listings/buy",
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		payload,
 		url.Values{},
 		&BuyResponse{},
@@ -693,7 +705,7 @@ func (api *CSFloat) ItemBuyOrders(apiKey string, item *Item) (*ItemBuyOrdersResp
 		api.httpClient,
 		method,
 		url,
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		formValues,
 		&ItemBuyOrdersResponse{},
@@ -714,7 +726,7 @@ func (api *CSFloat) SimpleItemBuyOrders(apiKey string, item *Item) (*SimpleItemB
 		api.httpClient,
 		method,
 		url,
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		body,
 		formValues,
 		&SimpleItemBuyOrdersResponse{},
@@ -726,7 +738,7 @@ func (api *CSFloat) ListingBuyOrders(apiKey, listingId string) (*ItemBuyOrdersRe
 		api.httpClient,
 		http.MethodGet,
 		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s/buy-orders", listingId),
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		url.Values{"limit": []string{"10"}},
 		&ItemBuyOrdersResponse{},
@@ -747,7 +759,7 @@ func (api *CSFloat) Similar(apiKey, listingId string) (*SimilarResponse, error) 
 		api.httpClient,
 		http.MethodGet,
 		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s/similar", listingId),
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		url.Values{},
 		&SimilarResponse{},
@@ -874,7 +886,7 @@ func (api *CSFloat) Transactions(apiKey string, payload TransactionsRequest) (*T
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/me/transactions",
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		form,
 		&TransactionsResponse{},
@@ -895,7 +907,7 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListResponse, err
 		api.httpClient,
 		http.MethodPost,
 		"https://csfloat.com/api/v1/listings",
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		payload,
 		url.Values{},
 		&ListResponse{},
@@ -955,7 +967,7 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/listings",
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		form,
 		&ListingsResponse{},
@@ -982,7 +994,7 @@ func (api *CSFloat) CreateSimpleBuyOrder(apiKey string, payload CreateSimpleBuyO
 		api.httpClient,
 		string(http.MethodPost),
 		"https://csfloat.com/api/v1/buy-orders",
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		payload,
 		url.Values{},
 		&CreateSimpleBuyOrderResponse{},
@@ -994,7 +1006,7 @@ func (api *CSFloat) DeleteBuyOrder(apiKey string, id string) (*GenericResponse, 
 		api.httpClient,
 		http.MethodDelete,
 		fmt.Sprintf("https://csfloat.com/api/v1/buy-orders/%s", id),
-		apiKey,
+		api.overrideAPIKey(apiKey),
 		nil,
 		url.Values{},
 		&GenericResponse{},
