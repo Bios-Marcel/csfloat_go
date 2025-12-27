@@ -242,6 +242,14 @@ const (
 	Souvenir = 3
 )
 
+type SortListingsBy string
+
+const (
+	BestDeals       = ""
+	Newest          = "most_recent"
+	HighestDiscount = "highest_discount"
+)
+
 type ListingsRequest struct {
 	MinPrice     int
 	MaxPrice     int
@@ -249,6 +257,7 @@ type ListingsRequest struct {
 	MaxFloat     float32
 	ExcludeRare  bool
 	Category     Category
+	SortBy       SortListingsBy
 	DefIndex     uint
 	StickerIndex uint
 	PaintIndex   uint
@@ -926,8 +935,11 @@ func (response *ListingsResponse) responseBody() any {
 func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsResponse, error) {
 	form := url.Values{}
 	form.Set("type", "buy_now")
-	form.Set("sort_by", "highest_discount")
 	form.Set("limit", "40")
+	// Empty = BestDeals = Default
+	if query.SortBy != BestDeals {
+		form.Set("sort_by", string(query.SortBy))
+	}
 	if query.ExcludeRare {
 		form.Set("min_ref_qty", strconv.FormatUint(20, 10))
 	}
