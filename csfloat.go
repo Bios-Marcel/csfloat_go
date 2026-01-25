@@ -826,6 +826,18 @@ type TransactionDetails struct {
 	PaymentProcessor string `json:"payment_processor"`
 	// SessionID is for strip deposits.
 	SessionID string `json:"session_id"`
+
+	// Withdrawal Fields
+	FloatFeeString string `json:"float_fee"`
+}
+
+func (details TransactionDetails) FloatFee() int {
+	if details.FloatFeeString == "" {
+		return 0
+	}
+
+	i, _ := strconv.ParseInt(details.FloatFeeString, 10, 32)
+	return int(i)
 }
 
 func (details TransactionDetails) Fee() int {
