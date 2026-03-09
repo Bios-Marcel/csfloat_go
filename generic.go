@@ -110,7 +110,7 @@ func concatInts[Number int | uint](n ...Number) string {
 		if i != 0 {
 			b.WriteRune(',')
 		}
-		b.WriteString(fmt.Sprintf("%d", val))
+		fmt.Fprintf(&b, "%d", val)
 	}
 	return b.String()
 }

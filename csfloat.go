@@ -611,9 +611,10 @@ func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesRespons
 }
 
 type HistoryEntry struct {
-	Price  uint      `json:"price"`
-	Item   Item      `json:"item"`
-	SoldAt time.Time `json:"sold_at"`
+	Price     uint          `json:"price"`
+	Item      Item          `json:"item"`
+	Reference ItemReference `json:"reference"`
+	SoldAt    time.Time     `json:"sold_at"`
 }
 
 type HistoryRequestPayload struct {
