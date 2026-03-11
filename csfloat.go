@@ -378,6 +378,49 @@ func (api *CSFloat) Me(apiKey string) (*MeResponse, error) {
 	)
 }
 
+type PostNewOfferRequest struct {
+	GivenAssetIds []string `json:"given_asset_ids"`
+	// ReceivedAssetIds is normally empty, as you usually only send assets.
+	ReceivedAssetIds []string `json:"received_asset_ids"`
+	// OfferId, figure out where it comes from.
+	OfferId string `json:"offer_id"`
+}
+
+func (api *CSFloat) PostNewOffer(apiKey string, offer PostNewOfferRequest) (*GenericResponse, error) {
+	return handleRequest(
+		api.httpClient,
+		http.MethodPost,
+		"https://csfloat.com/api/v1/trades/steam-status/new-offer",
+		api.overrideAPIKey(apiKey),
+		offer,
+		url.Values{},
+		&GenericResponse{},
+	)
+}
+
+type AcceptTradesResponse struct {
+	GenericResponse
+	Data []Trade `json:"data"`
+}
+
+func (response *AcceptTradesResponse) responseBody() any {
+	return response
+}
+
+func (api *CSFloat) BulkAcceptTrade(apiKey string, tradeIds ...string) (*AcceptTradesResponse, error) {
+	return handleRequest(
+		api.httpClient,
+		http.MethodPost,
+		"https://csfloat.com/api/v1/trades/bulk/accept",
+		api.overrideAPIKey(apiKey),
+		map[string]any{
+			"trade_ids": tradeIds,
+		},
+		url.Values{},
+		&AcceptTradesResponse{},
+	)
+}
+
 func (api *CSFloat) BulkCancel(apiKey string, tradeIds ...string) (*GenericResponse, error) {
 	return handleRequest(
 		api.httpClient,
