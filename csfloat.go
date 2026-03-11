@@ -114,6 +114,13 @@ type Reference struct {
 	Quantity uint `json:"quantity"`
 }
 
+type ListingState string
+
+const (
+	ListingStateListed   ListingState = "listed"
+	ListingStateRefunded ListingState = "refunded"
+)
+
 type ListedItem struct {
 	ID               string        `json:"id"`
 	CreatedAt        time.Time     `json:"created_at"`
@@ -121,6 +128,7 @@ type ListedItem struct {
 	Item             Item          `json:"item"`
 	Reference        ItemReference `json:"reference"`
 	Type             ListingType   `json:"type"`
+	State            ListingState  `json:"state"`
 	Description      string        `json:"description,omitempty"`
 	Private          bool          `json:"private"`
 	MaxOfferDiscount uint          `json:"max_offer_discount.omitempty"`
