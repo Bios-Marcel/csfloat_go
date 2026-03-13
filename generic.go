@@ -60,6 +60,9 @@ func handleRequest[T Response](
 		method,
 		endpoint,
 		body)
+	if err != nil {
+		return result, fmt.Errorf("error creating request: %w", err)
+	}
 
 	request.URL.RawQuery = form.Encode()
 
@@ -67,10 +70,6 @@ func handleRequest[T Response](
 	if body != nil {
 		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("Content-Length", strconv.Itoa(buffer.Len()))
-	}
-
-	if err != nil {
-		return result, fmt.Errorf("error creating request: %w", err)
 	}
 
 	response, err := client.Do(request)
