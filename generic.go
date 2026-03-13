@@ -39,6 +39,7 @@ type Response interface {
 }
 
 func handleRequest[T Response](
+	api *CSFloat,
 	client *http.Client,
 	method string,
 	endpoint string,
@@ -81,6 +82,13 @@ func handleRequest[T Response](
 	if err != nil {
 		return result, fmt.Errorf("error getting ratelimits: %w", err)
 	}
+
+	// This SHOULD not happen!
+	if ratelimits.Limit <= 0 {
+		return result, fmt.Errorf("invalid ratelimit object")
+	}
+
+	api.lastRatelimit = &ratelimits
 	result.setRatelimits(&ratelimits)
 
 	if response.StatusCode != http.StatusOK {
