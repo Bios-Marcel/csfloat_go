@@ -817,7 +817,7 @@ func (api *CSFloat) SimpleItemBuyOrders(apiKey string, item *Item) (*SimpleItemB
 	)
 }
 
-func (api *CSFloat) ListingBuyOrders(apiKey, listingId string) (*ItemBuyOrdersResponse, error) {
+func (api *CSFloat) ListingBuyOrders(apiKey, listingId string, limit int64) (*ItemBuyOrdersResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -825,7 +825,7 @@ func (api *CSFloat) ListingBuyOrders(apiKey, listingId string) (*ItemBuyOrdersRe
 		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s/buy-orders", listingId),
 		api.overrideAPIKey(apiKey),
 		nil,
-		url.Values{"limit": []string{"10"}},
+		url.Values{"limit": []string{strconv.FormatInt(limit, 10)}},
 		&ItemBuyOrdersResponse{},
 	)
 }
