@@ -203,12 +203,16 @@ type Item struct {
 	IconURL        string   `json:"icon_url"`
 
 	// InspectLink is used to open CS. However, CSFloat also uses it as a key to
-	// filter buy orders for a concrete asset.
-	InspectLink  string  `json:"inspect_link,omitempty"`
-	ScreenshotID string  `json:"cs2_screenshot_id,omitempty"`
-	Float        float64 `json:"float_value"`
-	IsStattrak   bool    `json:"is_stattrak"`
-	IsSouvenir   bool    `json:"is_souvenir"`
+	// filter buy orders for a concrete asset. FIXME Does this still work anywhere?
+	InspectLink string `json:"inspect_link,omitempty"`
+	// SerializedInspect seems to be the same as InspectLink. Do these have different names
+	// on different endpoints?
+	SerializedInspect string  `json:"serialized_inspect,omitempty"`
+	Sig               string  `json:"gs_sig,omitempty"`
+	ScreenshotID      string  `json:"cs2_screenshot_id,omitempty"`
+	Float             float64 `json:"float_value"`
+	IsStattrak        bool    `json:"is_stattrak"`
+	IsSouvenir        bool    `json:"is_souvenir"`
 	// DefIndex is the weapon type
 	DefIndex     uint `json:"def_index,omitempty"`
 	StickerIndex uint `json:"sticker_index,omitempty"`
@@ -779,7 +783,10 @@ type ItemBuyOrder struct {
 func (api *CSFloat) ItemBuyOrders(apiKey string, item *Item) (*ItemBuyOrdersResponse, error) {
 	formValues := url.Values{"limit": []string{"3"}}
 
-	formValues.Set("url", item.InspectLink)
+	formValues.Set("url", item.SerializedInspect)
+	formValues.Set("sig", item.Sig)
+	formValues.Set("market_hash_name", item.MarketHashName)
+
 	method := http.MethodGet
 	url := "https://csfloat.com/api/v1/buy-orders/item"
 
