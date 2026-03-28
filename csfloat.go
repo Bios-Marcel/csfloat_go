@@ -126,6 +126,8 @@ type ListingState string
 const (
 	ListingStateListed   ListingState = "listed"
 	ListingStateRefunded ListingState = "refunded"
+
+	// Note, these are NOT all possible listing states. There are others, but we don't know about them.
 )
 
 type ListedItem struct {
@@ -637,7 +639,8 @@ type Trade struct {
 type TradesResponse struct {
 	GenericResponse
 	Trades []Trade `json:"trades"`
-	Count  uint    `json:"count"`
+	// Count is the total count of trades (all pages for the given query)
+	Count uint `json:"count"`
 }
 
 func (response *TradesResponse) responseBody() any {
