@@ -10,3 +10,18 @@ func ApplyFee(value int, fee float64) (valueWithoutFee int, appliedFee int) {
 	valueWithoutFee = value - appliedFee
 	return
 }
+
+// FloatRange returns the float range for the given quality (fn, mw, ...).
+func FloatRange(f float64) (float64, float64) {
+	if f < 0.07 {
+		return 0.0, 0.07
+	} else if f < 0.15 {
+		return 0.07, 0.15
+	} else if f < 0.38 {
+		return 0.15, 0.38
+	} else if f < 0.45 {
+		return 0.38, 0.45
+	}
+
+	return 0.45, 1.0
+}

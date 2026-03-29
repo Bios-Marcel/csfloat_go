@@ -286,21 +286,6 @@ type ListingsRequest struct {
 	CharmIndex   uint
 }
 
-// FloatRange returns the float range for the given quality (fn, mw, ...).
-func (api *CSFloat) FloatRange(f float32) (float32, float32) {
-	if f < 0.07 {
-		return 0.0, 0.07
-	} else if f < 0.15 {
-		return 0.07, 0.15
-	} else if f < 0.38 {
-		return 0.15, 0.38
-	} else if f < 0.45 {
-		return 0.38, 0.45
-	}
-
-	return 0.45, 1.0
-}
-
 type ListingResponse struct {
 	GenericResponse
 	Item ListedItem
