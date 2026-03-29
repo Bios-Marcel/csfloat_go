@@ -755,15 +755,6 @@ func (api *CSFloat) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse,
 	)
 }
 
-type SimpleItemBuyOrdersResponse struct {
-	GenericResponse
-	Data []ItemBuyOrder `json:"data"`
-}
-
-func (response *SimpleItemBuyOrdersResponse) responseBody() any {
-	return response
-}
-
 type ItemBuyOrdersResponse struct {
 	GenericResponse
 	Data []ItemBuyOrder `json:"data"`
@@ -805,7 +796,7 @@ func (api *CSFloat) ItemBuyOrders(apiKey string, item *Item) (*ItemBuyOrdersResp
 	)
 }
 
-func (api *CSFloat) SimpleItemBuyOrders(apiKey string, item *Item) (*SimpleItemBuyOrdersResponse, error) {
+func (api *CSFloat) SimpleItemBuyOrders(apiKey string, item *Item) (*ItemBuyOrdersResponse, error) {
 	formValues := url.Values{"limit": []string{"3"}}
 
 	body := map[string]string{
@@ -823,7 +814,7 @@ func (api *CSFloat) SimpleItemBuyOrders(apiKey string, item *Item) (*SimpleItemB
 		api.overrideAPIKey(apiKey),
 		body,
 		formValues,
-		&SimpleItemBuyOrdersResponse{},
+		&ItemBuyOrdersResponse{},
 	)
 }
 
