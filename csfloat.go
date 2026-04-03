@@ -814,8 +814,8 @@ type ItemBuyOrder struct {
 	// MarketHashName is only used for simple buy orders.
 	MarketHashName string `json:"market_hash_name"`
 	// Expression is only used for advanced buy orders.
-	Expression string `json:"expression"`
-	Quantity   uint   `json:"qty"`
+	Expression string `json:"expression,omitempty"`
+	Quantity   uint   `json:"qty,omitempty"`
 	Price      uint   `json:"price"`
 }
 
