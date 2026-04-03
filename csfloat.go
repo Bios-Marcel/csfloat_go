@@ -204,11 +204,9 @@ type Item struct {
 	MarketHashName string   `json:"market_hash_name"`
 	IconURL        string   `json:"icon_url"`
 
-	// InspectLink is used to open CS. However, CSFloat also uses it as a key to
-	// filter buy orders for a concrete asset. FIXME Does this still work anywhere?
-	InspectLink string `json:"inspect_link,omitempty"`
-	// SerializedInspect seems to be the same as InspectLink. Do these have different names
-	// on different endpoints?
+	// SerializedInspect is the new format for inspect links, replacing InspectLink.
+	// InspectLink is still available on float, but not needed in the endpoints. It
+	// was previously used for getting concrete buy orders.
 	SerializedInspect string  `json:"serialized_inspect,omitempty"`
 	Sig               string  `json:"gs_sig,omitempty"`
 	ScreenshotID      string  `json:"cs2_screenshot_id,omitempty"`
