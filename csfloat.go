@@ -210,9 +210,10 @@ type Item struct {
 	SerializedInspect string  `json:"serialized_inspect,omitempty"`
 	Sig               string  `json:"gs_sig,omitempty"`
 	ScreenshotID      string  `json:"cs2_screenshot_id,omitempty"`
-	Float             float64 `json:"float_value"`
-	IsStattrak        bool    `json:"is_stattrak,omitempty"`
-	IsSouvenir        bool    `json:"is_souvenir,omitempty"`
+	Float             float64 `json:"float_value,omitempty"`
+	// These two are part of the name and can be retrieved via category.
+	// IsStattrak        bool    `json:"is_stattrak,omitempty"`
+	// IsSouvenir        bool    `json:"is_souvenir,omitempty"`
 	// DefIndex is the weapon type
 	DefIndex     uint `json:"def_index,omitempty"`
 	StickerIndex uint `json:"sticker_index,omitempty"`
@@ -244,10 +245,10 @@ func (item *Item) ScreenshotURL(playside bool) string {
 // Category will map to the query category matching this item. This is required
 // for listing similar items.
 func (item *Item) Category() Category {
-	if item.IsSouvenir {
+	if strings.HasPrefix(item.MarketHashName, "Souvenir") {
 		return Souvenir
 	}
-	if item.IsStattrak {
+	if strings.HasPrefix(item.MarketHashName, "StatTrak") {
 		return StatTrak
 	}
 	return Normal
@@ -624,6 +625,19 @@ const (
 	Escrow VerificationMode = "escrow"
 )
 
+type SteamOfferState int
+
+const (
+	NotSent                         SteamOfferState = 0
+	SentAwaitingMobileAuthenticator SteamOfferState = 9
+	Accepted                        SteamOfferState = 3
+)
+
+type SteamOffer struct {
+	State  int       `json:"state"`
+	SentAt time.Time `json:"sent_at"`
+}
+
 type Trade struct {
 	ID string `json:"id"`
 	// BuyerId is the steam ID, which can be your own ID if you are the buyer.
@@ -634,6 +648,8 @@ type Trade struct {
 	CreatedAt time.Time `json:"created_at"`
 	// AcceptedAt, is the time where the trade accepted the trade on CSFloat.
 	AcceptedAt time.Time `json:"accepted_at"`
+	// CURRENTLY UNUSED
+	// SteamOffer SteamOffer `json:"steam_offer"`
 	// TradeProtectionEndsAt is the time at which the Steam trade protection
 	// ends. Only after this, we can verify.
 	TradeProtectionEndsAt time.Time `json:"trade_protection_ends_at"`
