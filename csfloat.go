@@ -931,29 +931,29 @@ const (
 )
 
 type TransactionDetails struct {
-	ContractID string `json:"contract_id"`
-	TradeID    string `json:"trade_id"`
-	BidID      string `json:"bid_id"`
+	ContractID string `json:"contract_id,omitempty"`
+	TradeID    string `json:"trade_id,omitempty"`
+	BidID      string `json:"bid_id,omitempty"`
 	// ListingID is used for BidPosted
-	ListingID             string                `json:"listing_id"`
-	BuyOrderID            string                `json:"buy_order_id"`
-	OriginalTransactionId string                `json:"original_tx"`
-	Type                  TransactionDetailType `json:"type"`
+	ListingID             string                `json:"listing_id,omitempty"`
+	BuyOrderID            string                `json:"buy_order_id,omitempty"`
+	OriginalTransactionId string                `json:"original_tx,omitempty"`
+	Type                  TransactionDetailType `json:"type,omitempty"`
 	// FeeAmountString should not be used, use the FeeAmount function instead.
-	FeeAmountString string `json:"fee_amount"`
+	FeeAmountString string `json:"fee_amount,omitempty"`
 	// Reason is used for fines and others.
-	Reason string `json:"reason"`
+	Reason string `json:"reason,omitempty"`
 
 	// Fee is used for Deposits. God knows why its a seperate field and not
 	// FeeAmountString.
-	FeeString        string `json:"fee"`
-	PaymentMethod    string `json:"payment_method"`
-	PaymentProcessor string `json:"payment_processor"`
+	FeeString        string `json:"fee,omitempty"`
+	PaymentMethod    string `json:"payment_method,omitempty"`
+	PaymentProcessor string `json:"payment_processor,omitempty"`
 	// SessionID is for strip deposits.
-	SessionID string `json:"session_id"`
+	SessionID string `json:"session_id,omitempty"`
 
 	// Withdrawal Fields
-	FloatFeeString string `json:"float_fee"`
+	FloatFeeString string `json:"float_fee,omitempty"`
 }
 
 func (details TransactionDetails) FloatFee() int {
@@ -984,13 +984,14 @@ func (details TransactionDetails) FeeAmount() int {
 }
 
 type Transaction struct {
-	ID            string             `json:"id"`
-	CreatedAt     time.Time          `json:"created_at"`
+	ID        string    `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	// UserID seems to be our SteamID and is always the same ID.
 	UserID        string             `json:"user_id"`
 	Type          TransactionType    `json:"type"`
 	Details       TransactionDetails `json:"details"`
-	BalanceOffset int                `json:"balance_offset"`
-	PendingOffset int                `json:"pending_offset"`
+	BalanceOffset int                `json:"balance_offset,omitempty"`
+	PendingOffset int                `json:"pending_offset,omitempty"`
 }
 
 type TransactionsResponse struct {
