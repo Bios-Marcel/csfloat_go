@@ -766,6 +766,32 @@ func (api *CSFloat) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse,
 	)
 }
 
+func (api *CSFloat) Unwatch(apiKey string, listingId string) (*GenericResponse, error) {
+	return handleRequest(
+		api,
+		api.httpClient,
+		http.MethodDelete,
+		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s/watchlist", listingId),
+		api.overrideAPIKey(apiKey),
+		nil,
+		url.Values{},
+		&GenericResponse{},
+	)
+}
+
+func (api *CSFloat) Watch(apiKey string, listingId string) (*GenericResponse, error) {
+	return handleRequest(
+		api,
+		api.httpClient,
+		http.MethodPost,
+		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s/watchlist", listingId),
+		api.overrideAPIKey(apiKey),
+		nil,
+		url.Values{},
+		&GenericResponse{},
+	)
+}
+
 // SimpleItemBuyOrdersResponse is the same as BuyOrders content-wise, BUT the structure is different.
 type SimpleItemBuyOrdersResponse struct {
 	GenericResponse
