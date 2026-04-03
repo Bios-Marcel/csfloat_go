@@ -448,6 +448,32 @@ func (api *CSFloat) BulkCancel(apiKey string, tradeIds ...string) (*GenericRespo
 	)
 }
 
+type BulkListRequest struct {
+	Items []ListRequest `json:"items"`
+}
+
+type BulkListResponse struct {
+	GenericResponse
+	Data []ListedItem `json:"data"`
+}
+
+func (response *BulkListResponse) responseBody() any {
+	return response
+}
+
+func (api *CSFloat) BulkList(apiKey string, items ...ListRequest) (*BulkListResponse, error) {
+	return handleRequest(
+		api,
+		api.httpClient,
+		string(http.MethodPost),
+		"https://csfloat.com/api/v1/listings/bulk-list",
+		api.overrideAPIKey(apiKey),
+		BulkListRequest{Items: items},
+		url.Values{},
+		&BulkListResponse{},
+	)
+}
+
 func (api *CSFloat) BulkUnlist(apiKey string, listingId ...string) (*GenericResponse, error) {
 	if len(listingId) == 0 {
 		return nil, errors.New("no listings supplied")
@@ -559,8 +585,8 @@ type ListRequest struct {
 
 	AssetId     string      `json:"asset_id"`
 	AuctionType ListingType `json:"type"`
-	Description string      `json:"description"`
-	Private     bool        `json:"private"`
+	Description string      `json:"description,omitempty"`
+	Private     bool        `json:"private,omitempty"`
 }
 
 type Error struct {
