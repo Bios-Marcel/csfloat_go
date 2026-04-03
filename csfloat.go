@@ -139,8 +139,8 @@ type ListedItem struct {
 	Type             ListingType   `json:"type"`
 	State            ListingState  `json:"state"`
 	Description      string        `json:"description,omitempty"`
-	Private          bool          `json:"private"`
-	MaxOfferDiscount uint          `json:"max_offer_discount.omitempty"`
+	Private          bool          `json:"private,omitempty"`
+	MaxOfferDiscount uint          `json:"max_offer_discount,omitempty"`
 	Watchers         uint          `json:"watchers,omitempty"`
 }
 
@@ -157,7 +157,7 @@ type Sticker struct {
 	Reference Reference `json:"reference"`
 	IconURL   string    `json:"icon_url"`
 	Wear      float32   `json:"wear"`
-	Rotation  float32   `json:"rotation"`
+	Rotation  float32   `json:"rotation,omitempty"`
 }
 
 type Charm struct {
@@ -211,8 +211,8 @@ type Item struct {
 	Sig               string  `json:"gs_sig,omitempty"`
 	ScreenshotID      string  `json:"cs2_screenshot_id,omitempty"`
 	Float             float64 `json:"float_value"`
-	IsStattrak        bool    `json:"is_stattrak"`
-	IsSouvenir        bool    `json:"is_souvenir"`
+	IsStattrak        bool    `json:"is_stattrak,omitempty"`
+	IsSouvenir        bool    `json:"is_souvenir,omitempty"`
 	// DefIndex is the weapon type
 	DefIndex     uint `json:"def_index,omitempty"`
 	StickerIndex uint `json:"sticker_index,omitempty"`
@@ -224,7 +224,7 @@ type Item struct {
 	Charms     []Charm   `json:"keychains,omitempty"`
 	Fade       *Fade     `json:"fade,omitempty"`
 	BlueGem    *BlueGem  `json:"blue_gem,omitempty"`
-	Collection string    `json:"collection"`
+	Collection string    `json:"collection,omitempty"`
 
 	CharmIndex   uint `json:"keychain_index,omitempty"`
 	CharmPattern uint `json:"keychain_pattern,omitempty"`
