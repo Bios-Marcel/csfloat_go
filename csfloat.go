@@ -647,18 +647,18 @@ type Trade struct {
 	// order or manually.
 	CreatedAt time.Time `json:"created_at"`
 	// AcceptedAt, is the time where the trade accepted the trade on CSFloat.
-	AcceptedAt time.Time `json:"accepted_at"`
+	AcceptedAt time.Time `json:"accepted_at,omitzero"`
 	// CURRENTLY UNUSED
 	// SteamOffer SteamOffer `json:"steam_offer"`
 	// TradeProtectionEndsAt is the time at which the Steam trade protection
 	// ends. Only after this, we can verify.
-	TradeProtectionEndsAt time.Time `json:"trade_protection_ends_at"`
+	TradeProtectionEndsAt time.Time `json:"trade_protection_ends_at,omitzero"`
 	// VerifySaleAt is the time after which the traede protection runs out.
-	VerifySaleAt time.Time `json:"verify_sale_at"`
+	VerifySaleAt time.Time `json:"verify_sale_at,omitzero"`
 	// VerifiedAt is the time at which escrow ended.
-	VerifiedAt       time.Time        `json:"verified_at"`
+	VerifiedAt       time.Time        `json:"verified_at,omitzero"`
 	State            TradeState       `json:"state"`
-	VerificationMode VerificationMode `json:"verification_mode"`
+	VerificationMode VerificationMode `json:"verification_mode,omitempty"`
 }
 
 type TradesResponse struct {
