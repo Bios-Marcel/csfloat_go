@@ -111,14 +111,15 @@ const (
 )
 
 type ItemReference struct {
-	BasePrice      int  `json:"base_price"`
-	PredictedPrice int  `json:"predicted_price"`
-	Quantity       uint `json:"quantity"`
+	BasePrice      int  `json:"base_price,omitempty"`
+	PredictedPrice int  `json:"predicted_price,omitempty"`
+	Quantity       uint `json:"quantity,omitempty"`
 }
 
+// Reference is used as a price reference for items without dynamic factors, such as stickers.
 type Reference struct {
-	Price    uint `json:"price"`
-	Quantity uint `json:"quantity"`
+	Price    uint `json:"price,omitempty"`
+	Quantity uint `json:"quantity,omitempty"`
 }
 
 type ListingState string
