@@ -137,7 +137,7 @@ type Contract struct {
 	CreatedAt time.Time     `json:"created_at"`
 	Price     int           `json:"price"`
 	Item      Item          `json:"item"`
-	Reference ItemReference `json:"reference"`
+	Reference ItemReference `json:"reference,omitzero"`
 	Type      ListingType   `json:"type"`
 	State     ListingState  `json:"state"`
 }
@@ -154,7 +154,7 @@ type ActiveListing struct {
 	CreatedAt        time.Time     `json:"created_at"`
 	Price            int           `json:"price"`
 	Item             Item          `json:"item"`
-	Reference        ItemReference `json:"reference"`
+	Reference        ItemReference `json:"reference,omitzero"`
 	Type             ListingType   `json:"type"`
 	State            ListingState  `json:"state"`
 	Seller           Seller        `json:"seller"`
@@ -168,13 +168,13 @@ type InventoryItem struct {
 	Item
 	// ListingID is only filled for items that are already in the stall.
 	ListingID string        `json:"listing_id"`
-	Reference ItemReference `json:"reference"`
+	Reference ItemReference `json:"reference,omitzero"`
 }
 
 type Sticker struct {
 	Index     uint      `json:"stickerId"`
 	Name      string    `json:"name"`
-	Reference Reference `json:"reference"`
+	Reference Reference `json:"reference,omitzero"`
 	IconURL   string    `json:"icon_url"`
 	Wear      float32   `json:"wear,omitempty"`
 	Rotation  float32   `json:"rotation,omitempty"`
@@ -187,7 +187,7 @@ type Charm struct {
 	WrappedSticker uint      `json:"wrapped_sticker,omitempty"`
 	Name           string    `json:"name"`
 	IconURL        string    `json:"icon_url"`
-	Reference      Reference `json:"reference"`
+	Reference      Reference `json:"reference,omitzero"`
 }
 
 type ItemType string
@@ -735,7 +735,7 @@ func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesRespons
 type HistoryEntry struct {
 	Price     uint          `json:"price"`
 	Item      Item          `json:"item"`
-	Reference ItemReference `json:"reference"`
+	Reference ItemReference `json:"reference,omitzero"`
 	SoldAt    time.Time     `json:"sold_at"`
 }
 
