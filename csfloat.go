@@ -175,7 +175,7 @@ type Sticker struct {
 	Name      string    `json:"name"`
 	Reference Reference `json:"reference"`
 	IconURL   string    `json:"icon_url"`
-	Wear      float32   `json:"wear"`
+	Wear      float32   `json:"wear,omitempty"`
 	Rotation  float32   `json:"rotation,omitempty"`
 }
 
