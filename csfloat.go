@@ -76,9 +76,9 @@ func (api *CSFloat) overrideAPIKey(overrideKey string) string {
 }
 
 type Stall struct {
-	Items      []ListedItem `json:"data"`
-	Count      int          `json:"total_count"`
-	TotalPrice uint         `json:"total_price"`
+	Items      []ActiveListing `json:"data"`
+	Count      int             `json:"total_count"`
+	TotalPrice uint            `json:"total_price"`
 }
 
 type ListingType string
@@ -130,7 +130,25 @@ const (
 	// Note, these are NOT all possible listing states. There are others, but we don't know about them.
 )
 
-type ListedItem struct {
+// Contract is a snapshot of the listing at the time of purchase (or after failing / cancelling)
+type Contract struct {
+	ID        string        `json:"id"`
+	CreatedAt time.Time     `json:"created_at"`
+	Price     int           `json:"price"`
+	Item      Item          `json:"item"`
+	Reference ItemReference `json:"reference"`
+	Type      ListingType   `json:"type"`
+	State     ListingState  `json:"state"`
+}
+
+type Seller struct {
+	// Obsfuscated ID of the seller
+	ObfuscatedID string `json:"obfuscated_id,omitempty"`
+	// Steam ID of the seller
+	SteamID string `json:"steam_id,omitempty"`
+}
+
+type ActiveListing struct {
 	ID               string        `json:"id"`
 	CreatedAt        time.Time     `json:"created_at"`
 	Price            int           `json:"price"`
@@ -138,6 +156,7 @@ type ListedItem struct {
 	Reference        ItemReference `json:"reference"`
 	Type             ListingType   `json:"type"`
 	State            ListingState  `json:"state"`
+	Seller           Seller        `json:"seller"`
 	Description      string        `json:"description,omitempty"`
 	Private          bool          `json:"private,omitempty"`
 	MaxOfferDiscount uint          `json:"max_offer_discount,omitempty"`
@@ -287,7 +306,7 @@ type ListingsRequest struct {
 
 type ListingResponse struct {
 	GenericResponse
-	Item ListedItem
+	Item ActiveListing
 }
 
 func (response *ListingResponse) responseBody() any {
@@ -453,7 +472,7 @@ type BulkListRequest struct {
 
 type BulkListResponse struct {
 	GenericResponse
-	Data []ListedItem `json:"data"`
+	Data []ActiveListing `json:"data"`
 }
 
 func (response *BulkListResponse) responseBody() any {
@@ -641,8 +660,8 @@ type SteamOffer struct {
 type Trade struct {
 	ID string `json:"id"`
 	// BuyerId is the steam ID, which can be your own ID if you are the buyer.
-	BuyerId  string     `json:"buyer_id"`
-	Contract ListedItem `json:"contract"`
+	BuyerId  string   `json:"buyer_id"`
+	Contract Contract `json:"contract"`
 	// CreatedAt is the time at which the sale was made, either through a buy
 	// order or manually.
 	CreatedAt time.Time `json:"created_at"`
@@ -894,7 +913,7 @@ func (api *CSFloat) ListingBuyOrders(apiKey, listingId string, limit int64) (*It
 
 type SimilarResponse struct {
 	GenericResponse
-	Data []*ListedItem
+	Data []*ActiveListing
 }
 
 func (response *SimilarResponse) responseBody() any {
@@ -1057,7 +1076,7 @@ func (api *CSFloat) Transactions(apiKey string, payload TransactionsRequest) (*T
 
 type ListResponse struct {
 	GenericResponse
-	Item ListedItem
+	Item ActiveListing
 }
 
 func (response *ListResponse) responseBody() any {
@@ -1079,7 +1098,7 @@ func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListResponse, err
 
 type ListingsResponse struct {
 	GenericResponse
-	Data []ListedItem `json:"data"`
+	Data []ActiveListing `json:"data"`
 }
 
 func (response *ListingsResponse) responseBody() any {
