@@ -167,7 +167,7 @@ type ActiveListing struct {
 type InventoryItem struct {
 	Item
 	// ListingID is only filled for items that are already in the stall.
-	ListingID string        `json:"listing_id"`
+	ListingID string        `json:"listing_id,omitempty"`
 	Reference ItemReference `json:"reference,omitzero"`
 }
 
