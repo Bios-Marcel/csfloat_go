@@ -91,13 +91,13 @@ const (
 type Rarity uint8
 
 const (
-	Consumer   Rarity = 0
-	Industrial Rarity = 1
-	MilSpec    Rarity = 2
-	Restricted Rarity = 3
-	Classified Rarity = 4
-	Covert     Rarity = 5
-	Contraband Rarity = 6
+	Consumer   Rarity = 1
+	Industrial Rarity = 2
+	MilSpec    Rarity = 3
+	Restricted Rarity = 4
+	Classified Rarity = 5
+	Covert     Rarity = 6
+	Contraband Rarity = 7
 )
 
 type WearName string
@@ -1021,7 +1021,7 @@ type Transaction struct {
 	ID        string    `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	// UserID seems to be our SteamID and is always the same ID.
-	UserID        string             `json:"user_id"`
+	// UserID        string             `json:"user_id"`
 	Type          TransactionType    `json:"type"`
 	Details       TransactionDetails `json:"details"`
 	BalanceOffset int                `json:"balance_offset,omitempty"`
