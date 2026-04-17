@@ -292,18 +292,20 @@ const (
 )
 
 type ListingsRequest struct {
-	MinPrice     int
-	MaxPrice     int
-	MinFloat     float32
-	MaxFloat     float32
-	ExcludeRare  bool
-	Category     Category
-	SortBy       SortListingsBy
-	DefIndex     uint
-	StickerIndex uint
-	PaintIndex   uint
-	PaintSeed    []uint
-	CharmIndex   uint
+	MinPrice int
+	MaxPrice int
+	MinFloat float32
+	MaxFloat float32
+	//ExcludeRare true causes min_ref_qty to be set to 20, just like on the CSFloat page.
+	ExcludeRare    bool
+	MinRefQuantity uint
+	Category       Category
+	SortBy         SortListingsBy
+	DefIndex       uint
+	StickerIndex   uint
+	PaintIndex     uint
+	PaintSeed      []uint
+	CharmIndex     uint
 }
 
 type ListingResponse struct {
@@ -1115,7 +1117,9 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 	if query.SortBy != BestDeals {
 		form.Set("sort_by", string(query.SortBy))
 	}
-	if query.ExcludeRare {
+	if query.MinRefQuantity > 0 {
+		form.Set("min_ref_qty", strconv.FormatUint(uint64(query.MinRefQuantity), 10))
+	} else if query.ExcludeRare {
 		form.Set("min_ref_qty", strconv.FormatUint(20, 10))
 	}
 	if query.DefIndex > 0 {
