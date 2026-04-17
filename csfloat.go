@@ -17,7 +17,8 @@ import (
 const Fee float64 = 2
 
 const (
-	ErrorCodeAlreadySold = 4
+	ErrorCodeOverpricedRedquireKYC = 4
+	ErrorCodeAlreadySold           = 4
 	// ErrorCodeInvalidPurchaseState is thrown along HTTP status code 422. It
 	// is unclear when exactly, but it seems similar to AlreadySold. It might
 	// be unlisted.
@@ -549,20 +550,20 @@ type UpdateListingResponse struct {
 	ListingResponse
 }
 
-func (api *CSFloat) UpdatePrivate(apiKey, id string, private bool) (*UpdateListingResponse, error) {
-	return api.updateListing(apiKey, id, map[string]any{"private": private})
+func (api *CSFloat) UpdatePrivate(apiKey, listingId string, private bool) (*UpdateListingResponse, error) {
+	return api.updateListing(apiKey, listingId, map[string]any{"private": private})
 }
 
-func (api *CSFloat) UpdateDescription(apiKey, id string, description string) (*UpdateListingResponse, error) {
-	return api.updateListing(apiKey, id, map[string]any{"description": description})
+func (api *CSFloat) UpdateDescription(apiKey, listingId string, description string) (*UpdateListingResponse, error) {
+	return api.updateListing(apiKey, listingId, map[string]any{"description": description})
 }
 
-func (api *CSFloat) UpdateDiscount(apiKey, id string, discount uint) (*UpdateListingResponse, error) {
-	return api.updateListing(apiKey, id, map[string]any{"max_offer_discount": discount})
+func (api *CSFloat) UpdateDiscount(apiKey, listingId string, discount uint) (*UpdateListingResponse, error) {
+	return api.updateListing(apiKey, listingId, map[string]any{"max_offer_discount": discount})
 }
 
-func (api *CSFloat) UpdatePrice(apiKey, id string, price uint) (*UpdateListingResponse, error) {
-	return api.updateListing(apiKey, id, map[string]any{"price": price})
+func (api *CSFloat) UpdatePrice(apiKey, listingId string, price uint) (*UpdateListingResponse, error) {
+	return api.updateListing(apiKey, listingId, map[string]any{"price": price})
 }
 
 type UpdateListingRequest struct {
@@ -576,12 +577,12 @@ func (api *CSFloat) UpdateListing(apiKey, id string, payload UpdateListingReques
 	return api.updateListing(apiKey, id, payload)
 }
 
-func (api *CSFloat) updateListing(apiKey, id string, payload any) (*UpdateListingResponse, error) {
+func (api *CSFloat) updateListing(apiKey, listingId string, payload any) (*UpdateListingResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
 		http.MethodPatch,
-		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", id),
+		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
 		api.overrideAPIKey(apiKey),
 		payload,
 		url.Values{},
