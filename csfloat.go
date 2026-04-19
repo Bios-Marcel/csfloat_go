@@ -112,15 +112,15 @@ const (
 )
 
 type ItemReference struct {
-	BasePrice      int  `json:"base_price,omitempty"`
-	PredictedPrice int  `json:"predicted_price,omitempty"`
-	Quantity       uint `json:"quantity,omitempty"`
+	BasePrice      int  `json:"base_price,omitzero"`
+	PredictedPrice int  `json:"predicted_price,omitzero"`
+	Quantity       uint `json:"quantity,omitzero"`
 }
 
 // Reference is used as a price reference for items without dynamic factors, such as stickers.
 type Reference struct {
-	Price    uint `json:"price,omitempty"`
-	Quantity uint `json:"quantity,omitempty"`
+	Price    uint `json:"price,omitzero"`
+	Quantity uint `json:"quantity,omitzero"`
 }
 
 type ListingState string
@@ -160,9 +160,9 @@ type ActiveListing struct {
 	State            ListingState  `json:"state"`
 	Seller           Seller        `json:"seller"`
 	Description      string        `json:"description,omitempty"`
-	Private          bool          `json:"private,omitempty"`
-	MaxOfferDiscount uint          `json:"max_offer_discount,omitempty"`
-	Watchers         uint          `json:"watchers,omitempty"`
+	Private          bool          `json:"private,omitzero"`
+	MaxOfferDiscount uint          `json:"max_offer_discount,omitzero"`
+	Watchers         uint          `json:"watchers,omitzero"`
 }
 
 type InventoryItem struct {
@@ -177,15 +177,15 @@ type Sticker struct {
 	Name      string    `json:"name"`
 	Reference Reference `json:"reference,omitzero"`
 	IconURL   string    `json:"icon_url"`
-	Wear      float32   `json:"wear,omitempty"`
-	Rotation  float32   `json:"rotation,omitempty"`
+	Wear      float32   `json:"wear,omitzero"`
+	Rotation  float32   `json:"rotation,omitzero"`
 }
 
 type Charm struct {
 	// CharmId is called stickerId, not a typo.
 	Index          uint      `json:"stickerId"`
-	Pattern        uint      `json:"pattern,omitempty"`
-	WrappedSticker uint      `json:"wrapped_sticker,omitempty"`
+	Pattern        uint      `json:"pattern,omitzero"`
+	WrappedSticker uint      `json:"wrapped_sticker,omitzero"`
 	Name           string    `json:"name"`
 	IconURL        string    `json:"icon_url"`
 	Reference      Reference `json:"reference,omitzero"`
@@ -210,12 +210,12 @@ type Fade struct {
 }
 
 type BlueGem struct {
-	PlaysideBlue   float64 `json:"playside_blue"`
-	PlaysideGold   float64 `json:"playside_gold"`
-	PlaysidePurple float64 `json:"playside_purple"`
-	BacksideBlue   float64 `json:"backside_blue"`
-	BacksideGold   float64 `json:"backside_gold"`
-	BacksidePurple float64 `json:"backside_purple"`
+	PlaysideBlue   float64 `json:"playside_blue,omitzero"`
+	PlaysideGold   float64 `json:"playside_gold,omitzero"`
+	PlaysidePurple float64 `json:"playside_purple,omitzero"`
+	BacksideBlue   float64 `json:"backside_blue,omitzero"`
+	BacksideGold   float64 `json:"backside_gold,omitzero"`
+	BacksidePurple float64 `json:"backside_purple,omitzero"`
 }
 
 type Item struct {
@@ -231,25 +231,25 @@ type Item struct {
 	SerializedInspect string  `json:"serialized_inspect,omitempty"`
 	Sig               string  `json:"gs_sig,omitempty"`
 	ScreenshotID      string  `json:"cs2_screenshot_id,omitempty"`
-	Float             float64 `json:"float_value,omitempty"`
+	Float             float64 `json:"float_value,omitzero"`
 	// These two are part of the name and can be retrieved via category.
 	// IsStattrak        bool    `json:"is_stattrak,omitempty"`
 	// IsSouvenir        bool    `json:"is_souvenir,omitempty"`
 	// DefIndex is the weapon type
-	DefIndex     uint `json:"def_index,omitempty"`
-	StickerIndex uint `json:"sticker_index,omitempty"`
+	DefIndex     uint `json:"def_index,omitzero"`
+	StickerIndex uint `json:"sticker_index,omitzero"`
 	// PaintIndex is the skin type
-	PaintIndex uint `json:"paint_index,omitempty"`
+	PaintIndex uint `json:"paint_index,omitzero"`
 	// PaintSeed determines the skin pattern
-	PaintSeed  uint      `json:"paint_seed,omitempty"`
+	PaintSeed  uint      `json:"paint_seed,omitzero"`
 	Stickers   []Sticker `json:"stickers,omitempty"`
 	Charms     []Charm   `json:"keychains,omitempty"`
 	Fade       *Fade     `json:"fade,omitempty"`
 	BlueGem    *BlueGem  `json:"blue_gem,omitempty"`
 	Collection string    `json:"collection,omitempty"`
 
-	CharmIndex   uint `json:"keychain_index,omitempty"`
-	CharmPattern uint `json:"keychain_pattern,omitempty"`
+	CharmIndex   uint `json:"keychain_index,omitzero"`
+	CharmPattern uint `json:"keychain_pattern,omitzero"`
 }
 
 func (item *Item) ScreenshotURL(playside bool) string {
@@ -593,12 +593,12 @@ func (api *CSFloat) updateListing(apiKey, listingId string, payload any) (*Updat
 }
 
 type BuyNowRequest struct {
-	Price uint `json:"price,omitempty"`
+	Price uint `json:"price,omitzero"`
 }
 
 type AuctionRequest struct {
-	DurationDays uint `json:"duration_days,omitempty"`
-	ReservePrice uint `json:"reserve_price,omitempty"`
+	DurationDays uint `json:"duration_days,omitzero"`
+	ReservePrice uint `json:"reserve_price,omitzero"`
 }
 
 type ListRequest struct {
@@ -608,7 +608,7 @@ type ListRequest struct {
 	AssetId     string      `json:"asset_id"`
 	AuctionType ListingType `json:"type"`
 	Description string      `json:"description,omitempty"`
-	Private     bool        `json:"private,omitempty"`
+	Private     bool        `json:"private,omitzero"`
 }
 
 type Error struct {
@@ -854,7 +854,7 @@ type ItemBuyOrder struct {
 	MarketHashName string `json:"market_hash_name"`
 	// Expression is only used for advanced buy orders.
 	Expression string `json:"expression,omitempty"`
-	Quantity   uint   `json:"qty,omitempty"`
+	Quantity   uint   `json:"qty,omitzero"`
 	Price      uint   `json:"price"`
 }
 
@@ -1027,8 +1027,8 @@ type Transaction struct {
 	// UserID        string             `json:"user_id"`
 	Type          TransactionType    `json:"type"`
 	Details       TransactionDetails `json:"details"`
-	BalanceOffset int                `json:"balance_offset,omitempty"`
-	PendingOffset int                `json:"pending_offset,omitempty"`
+	BalanceOffset int                `json:"balance_offset,omitzero"`
+	PendingOffset int                `json:"pending_offset,omitzero"`
 }
 
 type TransactionsResponse struct {
