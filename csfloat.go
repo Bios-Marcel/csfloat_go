@@ -112,7 +112,9 @@ const (
 )
 
 type ItemReference struct {
-	BasePrice      int  `json:"base_price,omitzero"`
+	BasePrice     int `json:"base_price,omitzero"`
+	KeyChainPrice int `json:"key_chain_price,omitzero"`
+	// PredictedPrice equals BasePrice + KeyChainPrice
 	PredictedPrice int  `json:"predicted_price,omitzero"`
 	Quantity       uint `json:"quantity,omitzero"`
 }
