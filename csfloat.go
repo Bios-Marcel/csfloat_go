@@ -115,8 +115,9 @@ type ItemReference struct {
 	BasePrice     int `json:"base_price,omitzero"`
 	KeyChainPrice int `json:"key_chain_price,omitzero"`
 	// PredictedPrice equals BasePrice + KeyChainPrice
-	PredictedPrice int  `json:"predicted_price,omitzero"`
-	Quantity       uint `json:"quantity,omitzero"`
+	PredictedPrice int     `json:"predicted_price,omitzero"`
+	FloatFactor    float64 `json:"float_factor,omitzero"`
+	Quantity       uint    `json:"quantity,omitzero"`
 }
 
 // Reference is used as a price reference for items without dynamic factors, such as stickers.
@@ -291,6 +292,8 @@ const (
 	BestDeals       = ""
 	Newest          = "most_recent"
 	HighestDiscount = "highest_discount"
+	LowestPrice     = "lowest_price"
+	HighestPrice    = "highest_price"
 )
 
 type ListingsRequest struct {
