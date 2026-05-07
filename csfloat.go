@@ -1117,7 +1117,6 @@ func (response *ListingsResponse) responseBody() any {
 
 func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsResponse, error) {
 	form := url.Values{}
-	form.Set("type", "buy_now")
 	form.Set("limit", "40")
 	// Empty = BestDeals = Default
 	if query.SortBy != BestDeals {
