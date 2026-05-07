@@ -311,6 +311,7 @@ type ListingsRequest struct {
 	PaintIndex     uint
 	PaintSeed      []uint
 	CharmIndex     uint
+	Type           ListingType
 }
 
 type ListingResponse struct {
@@ -1157,6 +1158,9 @@ func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsRes
 	}
 	if query.CharmIndex > 0 {
 		form.Set("keychain_index", fmt.Sprintf("%d", query.CharmIndex))
+	}
+	if query.Type != "" {
+		form.Set("type", string(query.Type))
 	}
 
 	return handleRequest(
