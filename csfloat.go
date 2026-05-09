@@ -29,7 +29,7 @@ const (
 	ErrorCodeSalesHistoryNotAvailable = 200
 )
 
-type CSFloat struct {
+type API struct {
 	httpClient    *http.Client
 	defaultApiKey string
 	lastRatelimit *Ratelimits
@@ -37,17 +37,17 @@ type CSFloat struct {
 
 // LastRatelimit is the ratelimit for the last successful (reached the server) request made
 // or nil if no request has been made yet.
-func (api *CSFloat) LastRatelimit() *Ratelimits {
+func (api *API) LastRatelimit() *Ratelimits {
 	return api.lastRatelimit
 }
 
-func NewWithHTTPClient(client *http.Client) *CSFloat {
-	return &CSFloat{
+func NewWithHTTPClient(client *http.Client) *API {
+	return &API{
 		httpClient: client,
 	}
 }
 
-func New() *CSFloat {
+func New() *API {
 	dialer := &net.Dialer{
 		Timeout: 15 * time.Second,
 	}
@@ -65,11 +65,11 @@ func New() *CSFloat {
 	return NewWithHTTPClient(client)
 }
 
-func (api *CSFloat) SetDefaultAPIKey(key string) {
+func (api *API) SetDefaultAPIKey(key string) {
 	api.defaultApiKey = key
 }
 
-func (api *CSFloat) overrideAPIKey(overrideKey string) string {
+func (api *API) overrideAPIKey(overrideKey string) string {
 	if overrideKey != "" {
 		return overrideKey
 	}
@@ -324,7 +324,7 @@ func (response *ListingResponse) responseBody() any {
 }
 
 // Listing returns an existing listing.
-func (api *CSFloat) Listing(apiKey string, listingId string) (*ListingResponse, error) {
+func (api *API) Listing(apiKey string, listingId string) (*ListingResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -346,7 +346,7 @@ func (response *StallResponse) responseBody() any {
 	return &response.Stall
 }
 
-func (api *CSFloat) Stall(apiKey, steamId string) (*StallResponse, error) {
+func (api *API) Stall(apiKey, steamId string) (*StallResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -373,7 +373,7 @@ func (response *InventoryResponse) responseBody() any {
 // Inventory returns all visible (tradable) items from the Steam inventory.
 // This includes items already listed in the stall, those will have a
 // `listing_id` set.
-func (api *CSFloat) Inventory(apiKey string) (*InventoryResponse, error) {
+func (api *API) Inventory(apiKey string) (*InventoryResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -403,7 +403,7 @@ func (response *MeResponse) responseBody() any {
 	return response
 }
 
-func (api *CSFloat) Me(apiKey string) (*MeResponse, error) {
+func (api *API) Me(apiKey string) (*MeResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -424,7 +424,7 @@ type PostNewOfferRequest struct {
 	OfferId string `json:"offer_id"`
 }
 
-func (api *CSFloat) PostNewOffer(apiKey string, offer PostNewOfferRequest) (*GenericResponse, error) {
+func (api *API) PostNewOffer(apiKey string, offer PostNewOfferRequest) (*GenericResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -446,7 +446,7 @@ func (response *AcceptTradesResponse) responseBody() any {
 	return response
 }
 
-func (api *CSFloat) BulkAcceptTrade(apiKey string, tradeIds ...string) (*AcceptTradesResponse, error) {
+func (api *API) BulkAcceptTrade(apiKey string, tradeIds ...string) (*AcceptTradesResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -461,7 +461,7 @@ func (api *CSFloat) BulkAcceptTrade(apiKey string, tradeIds ...string) (*AcceptT
 	)
 }
 
-func (api *CSFloat) BulkCancel(apiKey string, tradeIds ...string) (*GenericResponse, error) {
+func (api *API) BulkCancel(apiKey string, tradeIds ...string) (*GenericResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -489,7 +489,7 @@ func (response *BulkListResponse) responseBody() any {
 	return response
 }
 
-func (api *CSFloat) BulkList(apiKey string, items ...ListRequest) (*BulkListResponse, error) {
+func (api *API) BulkList(apiKey string, items ...ListRequest) (*BulkListResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -502,7 +502,7 @@ func (api *CSFloat) BulkList(apiKey string, items ...ListRequest) (*BulkListResp
 	)
 }
 
-func (api *CSFloat) BulkUnlist(apiKey string, listingId ...string) (*GenericResponse, error) {
+func (api *API) BulkUnlist(apiKey string, listingId ...string) (*GenericResponse, error) {
 	if len(listingId) == 0 {
 		return nil, errors.New("no listings supplied")
 	}
@@ -541,7 +541,7 @@ func (response *UnlistResponse) responseBody() any {
 	return nil
 }
 
-func (api *CSFloat) Unlist(apiKey, listingId string) (*UnlistResponse, error) {
+func (api *API) Unlist(apiKey, listingId string) (*UnlistResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -558,19 +558,19 @@ type UpdateListingResponse struct {
 	ListingResponse
 }
 
-func (api *CSFloat) UpdatePrivate(apiKey, listingId string, private bool) (*UpdateListingResponse, error) {
+func (api *API) UpdatePrivate(apiKey, listingId string, private bool) (*UpdateListingResponse, error) {
 	return api.updateListing(apiKey, listingId, map[string]any{"private": private})
 }
 
-func (api *CSFloat) UpdateDescription(apiKey, listingId string, description string) (*UpdateListingResponse, error) {
+func (api *API) UpdateDescription(apiKey, listingId string, description string) (*UpdateListingResponse, error) {
 	return api.updateListing(apiKey, listingId, map[string]any{"description": description})
 }
 
-func (api *CSFloat) UpdateDiscount(apiKey, listingId string, discount uint) (*UpdateListingResponse, error) {
+func (api *API) UpdateDiscount(apiKey, listingId string, discount uint) (*UpdateListingResponse, error) {
 	return api.updateListing(apiKey, listingId, map[string]any{"max_offer_discount": discount})
 }
 
-func (api *CSFloat) UpdatePrice(apiKey, listingId string, price uint) (*UpdateListingResponse, error) {
+func (api *API) UpdatePrice(apiKey, listingId string, price uint) (*UpdateListingResponse, error) {
 	return api.updateListing(apiKey, listingId, map[string]any{"price": price})
 }
 
@@ -581,11 +581,11 @@ type UpdateListingRequest struct {
 	Price            uint   `json:"price"`
 }
 
-func (api *CSFloat) UpdateListing(apiKey, id string, payload UpdateListingRequest) (*UpdateListingResponse, error) {
+func (api *API) UpdateListing(apiKey, id string, payload UpdateListingRequest) (*UpdateListingResponse, error) {
 	return api.updateListing(apiKey, id, payload)
 }
 
-func (api *CSFloat) updateListing(apiKey, listingId string, payload any) (*UpdateListingResponse, error) {
+func (api *API) updateListing(apiKey, listingId string, payload any) (*UpdateListingResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -710,7 +710,7 @@ type TradesRequest struct {
 	States []TradeState
 }
 
-func (api *CSFloat) Trades(apiKey string, payload TradesRequest) (*TradesResponse, error) {
+func (api *API) Trades(apiKey string, payload TradesRequest) (*TradesResponse, error) {
 	if payload.Limit == 0 {
 		payload.Limit = 100
 	}
@@ -762,7 +762,7 @@ func (response *HistoryResponse) responseBody() any {
 	return &response.Data
 }
 
-func (api *CSFloat) History(apiKey string, payload HistoryRequestPayload) (*HistoryResponse, error) {
+func (api *API) History(apiKey string, payload HistoryRequestPayload) (*HistoryResponse, error) {
 	form := url.Values{}
 
 	// Passing zero for a case / sticker will yield in an empty result.
@@ -796,7 +796,7 @@ type BuyRequestPayload struct {
 	TotalPrice  uint     `json:"total_price"`
 }
 
-func (api *CSFloat) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse, error) {
+func (api *API) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -809,7 +809,7 @@ func (api *CSFloat) Buy(apiKey string, payload BuyRequestPayload) (*BuyResponse,
 	)
 }
 
-func (api *CSFloat) Unwatch(apiKey string, listingId string) (*GenericResponse, error) {
+func (api *API) Unwatch(apiKey string, listingId string) (*GenericResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -822,7 +822,7 @@ func (api *CSFloat) Unwatch(apiKey string, listingId string) (*GenericResponse, 
 	)
 }
 
-func (api *CSFloat) Watch(apiKey string, listingId string) (*GenericResponse, error) {
+func (api *API) Watch(apiKey string, listingId string) (*GenericResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -864,7 +864,7 @@ type ItemBuyOrder struct {
 	Price      uint   `json:"price"`
 }
 
-func (api *CSFloat) ItemBuyOrders(apiKey string, item *Item) (*ItemBuyOrdersResponse, error) {
+func (api *API) ItemBuyOrders(apiKey string, item *Item) (*ItemBuyOrdersResponse, error) {
 	formValues := url.Values{"limit": []string{"3"}}
 
 	formValues.Set("url", item.SerializedInspect)
@@ -886,7 +886,7 @@ func (api *CSFloat) ItemBuyOrders(apiKey string, item *Item) (*ItemBuyOrdersResp
 	)
 }
 
-func (api *CSFloat) SimpleItemBuyOrders(apiKey string, item *Item) (*SimpleItemBuyOrdersResponse, error) {
+func (api *API) SimpleItemBuyOrders(apiKey string, item *Item) (*SimpleItemBuyOrdersResponse, error) {
 	formValues := url.Values{"limit": []string{"3"}}
 
 	body := map[string]string{
@@ -908,7 +908,7 @@ func (api *CSFloat) SimpleItemBuyOrders(apiKey string, item *Item) (*SimpleItemB
 	)
 }
 
-func (api *CSFloat) ListingBuyOrders(apiKey, listingId string, limit int64) (*ItemBuyOrdersResponse, error) {
+func (api *API) ListingBuyOrders(apiKey, listingId string, limit int64) (*ItemBuyOrdersResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -930,7 +930,7 @@ func (response *SimilarResponse) responseBody() any {
 	return &response.Data
 }
 
-func (api *CSFloat) Similar(apiKey, listingId string) (*SimilarResponse, error) {
+func (api *API) Similar(apiKey, listingId string) (*SimilarResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -1062,7 +1062,7 @@ func (response *TransactionsResponse) responseBody() any {
 	return response
 }
 
-func (api *CSFloat) Transactions(apiKey string, payload TransactionsRequest) (*TransactionsResponse, error) {
+func (api *API) Transactions(apiKey string, payload TransactionsRequest) (*TransactionsResponse, error) {
 	if payload.Limit == 0 {
 		payload.Limit = 100
 	}
@@ -1093,7 +1093,7 @@ func (response *ListResponse) responseBody() any {
 	return &response.Item
 }
 
-func (api *CSFloat) List(apiKey string, payload ListRequest) (*ListResponse, error) {
+func (api *API) List(apiKey string, payload ListRequest) (*ListResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -1115,7 +1115,7 @@ func (response *ListingsResponse) responseBody() any {
 	return response
 }
 
-func (api *CSFloat) Listings(apiKey string, query ListingsRequest) (*ListingsResponse, error) {
+func (api *API) Listings(apiKey string, query ListingsRequest) (*ListingsResponse, error) {
 	form := url.Values{}
 	form.Set("limit", "40")
 	// Empty = BestDeals = Default
@@ -1189,7 +1189,7 @@ func (response *CreateSimpleBuyOrderResponse) responseBody() any {
 	return response
 }
 
-func (api *CSFloat) CreateSimpleBuyOrder(apiKey string, payload CreateSimpleBuyOrderPayload) (*CreateSimpleBuyOrderResponse, error) {
+func (api *API) CreateSimpleBuyOrder(apiKey string, payload CreateSimpleBuyOrderPayload) (*CreateSimpleBuyOrderResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
@@ -1202,7 +1202,7 @@ func (api *CSFloat) CreateSimpleBuyOrder(apiKey string, payload CreateSimpleBuyO
 	)
 }
 
-func (api *CSFloat) DeleteBuyOrder(apiKey string, id string) (*GenericResponse, error) {
+func (api *API) DeleteBuyOrder(apiKey string, id string) (*GenericResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,

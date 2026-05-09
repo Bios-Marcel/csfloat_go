@@ -39,7 +39,7 @@ type Response interface {
 }
 
 func handleRequest[T Response](
-	api *CSFloat,
+	api *API,
 	client *http.Client,
 	method string,
 	endpoint string,
