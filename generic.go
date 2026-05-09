@@ -67,7 +67,9 @@ func handleRequest[T Response](
 
 	request.URL.RawQuery = form.Encode()
 
-	request.Header.Set("Authorization", apiKey)
+	if apiKey != "" {
+		request.Header.Set("Authorization", apiKey)
+	}
 	if body != nil {
 		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("Content-Length", strconv.Itoa(buffer.Len()))
@@ -80,7 +82,15 @@ func handleRequest[T Response](
 
 	ratelimits, err := ratelimitsFrom(response)
 	if err != nil {
-		return result, fmt.Errorf("error getting ratelimits: %w", err)
+		defer request.Body.Close()
+		var bodyText string
+		bytes, err := io.ReadAll(request.Body)
+		if err != nil {
+			bodyText = "error reading body"
+		} else {
+			bodyText = string(bytes)
+		}
+		return result, fmt.Errorf("error getting ratelimits (%d: %s): %w", response.StatusCode, bodyText, err)
 	}
 
 	// This SHOULD not happen!

@@ -1,6 +1,7 @@
 package csfloat
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -25,17 +26,17 @@ func ratelimitsFrom(response *http.Response) (Ratelimits, error) {
 	now := time.Now()
 	remainingInt, err := strconv.ParseUint(remaining, 10, 64)
 	if err != nil {
-		return ratelimits, err
+		return ratelimits, fmt.Errorf("error parsing X-Ratelimit-Remaining: %w", err)
 	}
 
 	limitInt, err := strconv.ParseUint(limit, 10, 64)
 	if err != nil {
-		return ratelimits, err
+		return ratelimits, fmt.Errorf("error parsing X-Ratelimit-Limit: %w", err)
 	}
 
 	resetInt, err := strconv.Atoi(reset)
 	if err != nil {
-		return ratelimits, err
+		return ratelimits, fmt.Errorf("error parsing X-Ratelimit-Reset: %w", err)
 	}
 
 	ratelimits.Remaining = uint(remainingInt)
