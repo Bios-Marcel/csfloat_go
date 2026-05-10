@@ -2,7 +2,7 @@ package csfloat
 
 import (
 	"bytes"
-	"encoding/json"
+	json "encoding/json/v2"
 	"fmt"
 	"io"
 	"net/http"
@@ -51,7 +51,7 @@ func handleRequest[T Response](
 	var body io.Reader
 	var buffer bytes.Buffer
 	if payload != nil {
-		if err := json.NewEncoder(&buffer).Encode(payload); err != nil {
+		if err := json.MarshalWrite(&buffer, payload); err != nil {
 			return result, fmt.Errorf("error encoding payload: %w", err)
 		}
 		body = &buffer
@@ -113,7 +113,7 @@ func handleRequest[T Response](
 	}
 
 	if target := result.responseBody(); target != nil {
-		if err := json.NewDecoder(response.Body).Decode(result.responseBody()); err != nil {
+		if err := json.UnmarshalRead(response.Body, result.responseBody()); err != nil {
 			return result, fmt.Errorf("error decoding response: %w", err)
 		}
 	}
