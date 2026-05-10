@@ -214,7 +214,7 @@ type BlueGem struct {
 type Item struct {
 	ID             string   `json:"asset_id"`
 	Rarity         Rarity   `json:"rarity"`
-	Type           ItemType `jsob:"type"`
+	Type           ItemType `json:"type"`
 	MarketHashName string   `json:"market_hash_name"`
 	IconURL        string   `json:"icon_url"`
 
