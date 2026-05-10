@@ -102,12 +102,12 @@ const (
 )
 
 type ItemReference struct {
-	BasePrice     int `json:"base_price,omitzero"`
-	KeyChainPrice int `json:"keychain_price,omitzero"`
-	// PredictedPrice equals BasePrice + KeyChainPrice
-	PredictedPrice int     `json:"predicted_price,omitzero"`
-	FloatFactor    float64 `json:"float_factor,omitzero"`
-	Quantity       uint    `json:"quantity,omitzero"`
+	BasePrice     int     `json:"base_price,omitzero"`
+	FloatFactor   float64 `json:"float_factor,omitzero"`
+	KeyChainPrice int     `json:"keychain_price,omitzero"`
+	// PredictedPrice = (BasePrice * FloatFactor) + KeyChainPrice
+	PredictedPrice int  `json:"predicted_price,omitzero"`
+	Quantity       uint `json:"quantity,omitzero"`
 }
 
 // Reference is used as a price reference for items without dynamic factors, such as stickers.
@@ -241,8 +241,9 @@ type Item struct {
 	BlueGem    *BlueGem  `json:"blue_gem,omitempty"`
 	Collection string    `json:"collection,omitempty"`
 
-	CharmIndex   uint `json:"keychain_index,omitzero"`
-	CharmPattern uint `json:"keychain_pattern,omitzero"`
+	CharmIndex         uint `json:"keychain_index,omitzero"`
+	CharmPattern       uint `json:"keychain_pattern,omitzero"`
+	CharmHighlightReel uint `json:"keychain_highlight_reel,omitzero"`
 }
 
 func (item *Item) ScreenshotURL(playside bool) string {
@@ -292,16 +293,17 @@ type ListingsRequest struct {
 	MinFloat float32
 	MaxFloat float32
 	//ExcludeRare true causes min_ref_qty to be set to 20, just like on the CSFloat page.
-	ExcludeRare    bool
-	MinRefQuantity uint
-	Category       Category
-	SortBy         SortListingsBy
-	DefIndex       uint
-	StickerIndex   uint
-	PaintIndex     uint
-	PaintSeed      []uint
-	CharmIndex     uint
-	Type           ListingType
+	ExcludeRare        bool
+	MinRefQuantity     uint
+	Category           Category
+	SortBy             SortListingsBy
+	DefIndex           uint
+	StickerIndex       uint
+	PaintIndex         uint
+	PaintSeed          []uint
+	CharmIndex         uint
+	CharmHighlightReel uint
+	Type               ListingType
 }
 
 type ListingResponse struct {
@@ -1138,7 +1140,6 @@ func (api *API) Listings(query ListingsRequest) (*ListingsResponse, error) {
 	if query.MinFloat > 0 {
 		form.Set("min_float", fmt.Sprintf("%0f", query.MinFloat))
 	}
-	// FIXME Set max float to 0.99 to avoid charms and stickers?
 	if query.MaxFloat > 0 {
 		form.Set("max_float", fmt.Sprintf("%0f", query.MaxFloat))
 	}
@@ -1147,6 +1148,9 @@ func (api *API) Listings(query ListingsRequest) (*ListingsResponse, error) {
 	}
 	if query.CharmIndex > 0 {
 		form.Set("keychain_index", fmt.Sprintf("%d", query.CharmIndex))
+	}
+	if query.CharmHighlightReel > 0 {
+		form.Set("keychain_highlight_reel", fmt.Sprintf("%d", query.CharmHighlightReel))
 	}
 	if query.Type != "" {
 		form.Set("type", string(query.Type))
