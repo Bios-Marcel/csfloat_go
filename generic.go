@@ -82,13 +82,15 @@ func handleRequest[T Response](
 
 	ratelimits, err := ratelimitsFrom(response)
 	if err != nil {
-		defer request.Body.Close()
 		var bodyText string
-		bytes, err := io.ReadAll(request.Body)
-		if err != nil {
-			bodyText = "error reading body"
-		} else {
-			bodyText = string(bytes)
+		if response.Body != nil {
+			defer response.Body.Close()
+			bytes, err := io.ReadAll(response.Body)
+			if err != nil {
+				bodyText = "error reading body"
+			} else {
+				bodyText = string(bytes)
+			}
 		}
 		return result, fmt.Errorf("error getting ratelimits (%d: %s): %w", response.StatusCode, bodyText, err)
 	}
