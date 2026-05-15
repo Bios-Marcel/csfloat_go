@@ -158,6 +158,10 @@ type ActiveListing struct {
 	Watchers         uint          `json:"watchers,omitzero"`
 }
 
+func (al *ActiveListing) URL() string {
+	return fmt.Sprintf("https://csfloat.com/item/%s", al.ID)
+}
+
 type InventoryItem struct {
 	Item
 	// ListingID is only filled for items that are already in the stall.
