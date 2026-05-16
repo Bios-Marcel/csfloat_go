@@ -123,7 +123,7 @@ func handleRequest[T Response](
 	}
 
 	if target := result.responseBody(); target != nil {
-		if err := json.UnmarshalRead(response.Body, result.responseBody()); err != nil {
+		if err := json.UnmarshalRead(response.Body, target); err != nil {
 			return result, fmt.Errorf("error decoding response: %w", err)
 		}
 	}
@@ -135,9 +135,9 @@ func concatInts[Number int | uint](n ...Number) string {
 	var b strings.Builder
 	for i, val := range n {
 		if i != 0 {
-			b.WriteRune(',')
+			b.WriteByte(',')
 		}
-		fmt.Fprintf(&b, "%d", val)
+		b.WriteString(strconv.FormatInt(int64(val), 10))
 	}
 	return b.String()
 }

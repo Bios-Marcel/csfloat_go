@@ -1,9 +1,8 @@
 package csfloat
 
 import (
-	"encoding/json"
+	json "encoding/json/v2"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -162,7 +161,7 @@ type ActiveListing struct {
 }
 
 func (al *ActiveListing) URL() string {
-	return fmt.Sprintf("https://csfloat.com/item/%s", al.ID)
+	return "https://csfloat.com/item/" + al.ID
 }
 
 type InventoryItem struct {
@@ -259,9 +258,9 @@ func (item *Item) ScreenshotURL(playside bool) string {
 	}
 
 	if playside {
-		return fmt.Sprintf("https://csfloat.pics/m/%s/playside.png?v=3", item.ScreenshotID)
+		return "https://csfloat.pics/m/" + item.ScreenshotID + "/playside.png?v=3"
 	}
-	return fmt.Sprintf("https://csfloat.pics/m/%s/backside.png?v=3", item.ScreenshotID)
+	return "https://csfloat.pics/m/" + item.ScreenshotID + "/backside.png?v=3"
 }
 
 // Category will map to the query category matching this item. This is required
@@ -328,10 +327,10 @@ func (api *API) Listing(listingId string) (*ListingResponse, error) {
 		api,
 		api.httpClient,
 		http.MethodGet,
-		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
+		"https://csfloat.com/api/v1/listings/"+listingId,
 		api.apiKey,
 		nil,
-		url.Values{},
+		nil,
 		&ListingResponse{},
 	)
 }
@@ -350,7 +349,7 @@ func (api *API) Stall(steamId string) (*StallResponse, error) {
 		api,
 		api.httpClient,
 		http.MethodGet,
-		fmt.Sprintf("https://csfloat.com/api/v1/users/%s/stall", steamId),
+		"https://csfloat.com/api/v1/users/"+steamId+"/stall",
 		api.apiKey,
 		nil,
 		url.Values{
@@ -410,7 +409,7 @@ func (api *API) Me() (*MeResponse, error) {
 		"https://csfloat.com/api/v1/me",
 		api.apiKey,
 		nil,
-		url.Values{},
+		nil,
 		&MeResponse{},
 	)
 }
@@ -431,7 +430,7 @@ func (api *API) PostNewOffer(offer PostNewOfferRequest) (*GenericResponse, error
 		"https://csfloat.com/api/v1/trades/steam-status/new-offer",
 		api.apiKey,
 		offer,
-		url.Values{},
+		nil,
 		&GenericResponse{},
 	)
 }
@@ -455,7 +454,7 @@ func (api *API) BulkAcceptTrade(tradeIds ...string) (*AcceptTradesResponse, erro
 		map[string]any{
 			"trade_ids": tradeIds,
 		},
-		url.Values{},
+		nil,
 		&AcceptTradesResponse{},
 	)
 }
@@ -470,7 +469,7 @@ func (api *API) BulkCancel(tradeIds ...string) (*GenericResponse, error) {
 		map[string]any{
 			"trade_ids": tradeIds,
 		},
-		url.Values{},
+		nil,
 		&GenericResponse{},
 	)
 }
@@ -492,11 +491,11 @@ func (api *API) BulkList(items ...ListRequest) (*BulkListResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
-		string(http.MethodPost),
+		http.MethodPost,
 		"https://csfloat.com/api/v1/listings/bulk-list",
 		api.apiKey,
 		BulkListRequest{Items: items},
-		url.Values{},
+		nil,
 		&BulkListResponse{},
 	)
 }
@@ -510,10 +509,10 @@ func (api *API) BulkUnlist(listingId ...string) (*GenericResponse, error) {
 			api,
 			api.httpClient,
 			http.MethodDelete,
-			fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
+			"https://csfloat.com/api/v1/listings/"+listingId[0],
 			api.apiKey,
 			nil,
-			url.Values{},
+			nil,
 			&GenericResponse{},
 		)
 	}
@@ -521,13 +520,13 @@ func (api *API) BulkUnlist(listingId ...string) (*GenericResponse, error) {
 	return handleRequest(
 		api,
 		api.httpClient,
-		string(http.MethodPatch),
+		http.MethodPatch,
 		"https://csfloat.com/api/v1/listings/bulk-delist",
 		api.apiKey,
 		map[string][]string{
 			"contract_ids": listingId,
 		},
-		url.Values{},
+		nil,
 		&GenericResponse{},
 	)
 }
@@ -545,10 +544,10 @@ func (api *API) Unlist(listingId string) (*UnlistResponse, error) {
 		api,
 		api.httpClient,
 		http.MethodDelete,
-		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
+		"https://csfloat.com/api/v1/listings/"+listingId,
 		api.apiKey,
 		nil,
-		url.Values{},
+		nil,
 		&UnlistResponse{},
 	)
 }
@@ -589,10 +588,10 @@ func (api *API) updateListing(listingId string, payload any) (*UpdateListingResp
 		api,
 		api.httpClient,
 		http.MethodPatch,
-		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s", listingId),
+		"https://csfloat.com/api/v1/listings/"+listingId,
 		api.apiKey,
 		payload,
-		url.Values{},
+		nil,
 		&UpdateListingResponse{},
 	)
 }
@@ -717,10 +716,12 @@ func (api *API) Trades(payload TradesRequest) (*TradesResponse, error) {
 	form := url.Values{}
 	if len(payload.States) > 0 {
 		var str strings.Builder
+		// longest state is cancelled with 9, so we'd fit cancelled + a comma
+		str.Grow(len(payload.States) * 10)
 		for index, state := range payload.States {
 			str.WriteString(string(state))
 			if index < len(payload.States)-1 {
-				str.WriteRune(',')
+				str.WriteByte(',')
 			}
 		}
 		form.Set("state", str.String())
@@ -774,7 +775,7 @@ func (api *API) History(payload HistoryRequestPayload) (*HistoryResponse, error)
 		api,
 		api.httpClient,
 		http.MethodGet,
-		fmt.Sprintf("https://csfloat.com/api/v1/history/%s/sales", url.QueryEscape(payload.MarketHashName)),
+		"https://csfloat.com/api/v1/history/"+url.QueryEscape(payload.MarketHashName)+"/sales",
 		api.apiKey,
 		nil,
 		form,
@@ -803,7 +804,7 @@ func (api *API) Buy(payload BuyRequestPayload) (*BuyResponse, error) {
 		"https://csfloat.com/api/v1/listings/buy",
 		api.apiKey,
 		payload,
-		url.Values{},
+		nil,
 		&BuyResponse{},
 	)
 }
@@ -813,10 +814,10 @@ func (api *API) Unwatch(listingId string) (*GenericResponse, error) {
 		api,
 		api.httpClient,
 		http.MethodDelete,
-		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s/watchlist", listingId),
+		"https://csfloat.com/api/v1/listings/"+listingId+"/watchlist",
 		api.apiKey,
 		nil,
-		url.Values{},
+		nil,
 		&GenericResponse{},
 	)
 }
@@ -826,10 +827,10 @@ func (api *API) Watch(listingId string) (*GenericResponse, error) {
 		api,
 		api.httpClient,
 		http.MethodPost,
-		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s/watchlist", listingId),
+		"https://csfloat.com/api/v1/listings/"+listingId+"/watchlist",
 		api.apiKey,
 		nil,
-		url.Values{},
+		nil,
 		&GenericResponse{},
 	)
 }
@@ -912,7 +913,7 @@ func (api *API) ListingBuyOrders(listingId string, limit int64) (*ItemBuyOrdersR
 		api,
 		api.httpClient,
 		http.MethodGet,
-		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s/buy-orders", listingId),
+		"https://csfloat.com/api/v1/listings/"+listingId+"/buy-orders",
 		api.apiKey,
 		nil,
 		url.Values{"limit": []string{strconv.FormatInt(limit, 10)}},
@@ -934,10 +935,10 @@ func (api *API) Similar(listingId string) (*SimilarResponse, error) {
 		api,
 		api.httpClient,
 		http.MethodGet,
-		fmt.Sprintf("https://csfloat.com/api/v1/listings/%s/similar", listingId),
+		"https://csfloat.com/api/v1/listings/"+listingId+"/similar",
 		api.apiKey,
 		nil,
-		url.Values{},
+		nil,
 		&SimilarResponse{},
 	)
 }
@@ -945,7 +946,7 @@ func (api *API) Similar(listingId string) (*SimilarResponse, error) {
 func errorFrom(response *http.Response) (Error, error) {
 	var csfloatError Error
 	csfloatError.HttpStatus = uint(response.StatusCode)
-	return csfloatError, json.NewDecoder(response.Body).Decode(&csfloatError)
+	return csfloatError, json.UnmarshalRead(response.Body, &csfloatError)
 }
 
 type TransactionType string
@@ -1100,7 +1101,7 @@ func (api *API) List(payload ListRequest) (*ListResponse, error) {
 		"https://csfloat.com/api/v1/listings",
 		api.apiKey,
 		payload,
-		url.Values{},
+		nil,
 		&ListResponse{},
 	)
 }
@@ -1139,25 +1140,25 @@ func (api *API) Listings(query ListingsRequest) (*ListingsResponse, error) {
 		form.Set("category", strconv.FormatUint(uint64(query.Category), 10))
 	}
 	if query.MinPrice > 0 {
-		form.Set("min_price", fmt.Sprintf("%d", query.MinPrice))
+		form.Set("min_price", strconv.Itoa(query.MinPrice))
 	}
 	if query.MaxPrice > 0 {
-		form.Set("max_price", fmt.Sprintf("%d", query.MaxPrice))
+		form.Set("max_price", strconv.Itoa(query.MaxPrice))
 	}
 	if query.MinFloat > 0 {
-		form.Set("min_float", fmt.Sprintf("%0f", query.MinFloat))
+		form.Set("min_float", strconv.FormatFloat(float64(query.MinFloat), 'f', -1, 32))
 	}
 	if query.MaxFloat > 0 {
-		form.Set("max_float", fmt.Sprintf("%0f", query.MaxFloat))
+		form.Set("max_float", strconv.FormatFloat(float64(query.MaxFloat), 'f', -1, 32))
 	}
 	if query.StickerIndex > 0 {
-		form.Set("sticker_index", fmt.Sprintf("%d", query.StickerIndex))
+		form.Set("sticker_index", strconv.FormatUint(uint64(query.StickerIndex), 10))
 	}
 	if query.CharmIndex > 0 {
-		form.Set("keychain_index", fmt.Sprintf("%d", query.CharmIndex))
+		form.Set("keychain_index", strconv.FormatUint(uint64(query.CharmIndex), 10))
 	}
 	if query.CharmHighlightReel > 0 {
-		form.Set("keychain_highlight_reel", fmt.Sprintf("%d", query.CharmHighlightReel))
+		form.Set("keychain_highlight_reel", strconv.FormatUint(uint64(query.CharmHighlightReel), 10))
 	}
 	if query.Type != "" {
 		form.Set("type", string(query.Type))
@@ -1194,11 +1195,11 @@ func (api *API) CreateSimpleBuyOrder(payload CreateSimpleBuyOrderPayload) (*Crea
 	return handleRequest(
 		api,
 		api.httpClient,
-		string(http.MethodPost),
+		http.MethodPost,
 		"https://csfloat.com/api/v1/buy-orders",
 		api.apiKey,
 		payload,
-		url.Values{},
+		nil,
 		&CreateSimpleBuyOrderResponse{},
 	)
 }
@@ -1208,10 +1209,10 @@ func (api *API) DeleteBuyOrder(id string) (*GenericResponse, error) {
 		api,
 		api.httpClient,
 		http.MethodDelete,
-		fmt.Sprintf("https://csfloat.com/api/v1/buy-orders/%s", id),
+		"https://csfloat.com/api/v1/buy-orders/"+id,
 		api.apiKey,
 		nil,
-		url.Values{},
+		nil,
 		&GenericResponse{},
 	)
 }
