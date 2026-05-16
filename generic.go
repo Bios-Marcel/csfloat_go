@@ -40,6 +40,7 @@ type Response interface {
 
 func handleRequest[T Response](
 	api *API,
+	bucketKey RatelimitBucketKey,
 	client *http.Client,
 	method string,
 	endpoint string,
@@ -108,7 +109,7 @@ func handleRequest[T Response](
 		return result, fmt.Errorf("invalid ratelimit object")
 	}
 
-	api.lastRatelimit = &ratelimits
+	api.updateRatelimits(bucketKey, &ratelimits)
 	result.setRatelimits(&ratelimits)
 
 	if response.StatusCode != http.StatusOK {

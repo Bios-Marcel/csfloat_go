@@ -29,21 +29,16 @@ const (
 )
 
 type API struct {
-	httpClient    *http.Client
-	apiKey        string
-	lastRatelimit *Ratelimits
-}
-
-// LastRatelimit is the ratelimit for the last successful (reached the server) request made
-// or nil if no request has been made yet.
-func (api *API) LastRatelimit() *Ratelimits {
-	return api.lastRatelimit
+	httpClient *http.Client
+	apiKey     string
+	ratelimits map[RatelimitBucketKey]*Ratelimits
 }
 
 func NewWithHTTPClient(apiKey string, client *http.Client) *API {
 	return &API{
 		httpClient: client,
 		apiKey:     apiKey,
+		ratelimits: make(map[RatelimitBucketKey]*Ratelimits),
 	}
 }
 
@@ -325,6 +320,7 @@ func (response *ListingResponse) responseBody() any {
 func (api *API) Listing(listingId string) (*ListingResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyGetListing,
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/listings/"+listingId,
@@ -347,6 +343,7 @@ func (response *StallResponse) responseBody() any {
 func (api *API) Stall(steamId string) (*StallResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyGetStall,
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/users/"+steamId+"/stall",
@@ -374,6 +371,7 @@ func (response *InventoryResponse) responseBody() any {
 func (api *API) Inventory() (*InventoryResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyGetInventory,
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/me/inventory",
@@ -404,6 +402,7 @@ func (response *MeResponse) responseBody() any {
 func (api *API) Me() (*MeResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyGetMe,
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/me",
@@ -425,6 +424,7 @@ type PostNewOfferRequest struct {
 func (api *API) PostNewOffer(offer PostNewOfferRequest) (*GenericResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyPostNewOffer,
 		api.httpClient,
 		http.MethodPost,
 		"https://csfloat.com/api/v1/trades/steam-status/new-offer",
@@ -447,6 +447,7 @@ func (response *AcceptTradesResponse) responseBody() any {
 func (api *API) BulkAcceptTrade(tradeIds ...string) (*AcceptTradesResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyBulkAcceptTrade,
 		api.httpClient,
 		http.MethodPost,
 		"https://csfloat.com/api/v1/trades/bulk/accept",
@@ -462,6 +463,7 @@ func (api *API) BulkAcceptTrade(tradeIds ...string) (*AcceptTradesResponse, erro
 func (api *API) BulkCancel(tradeIds ...string) (*GenericResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyBulkCancel,
 		api.httpClient,
 		http.MethodPost,
 		"https://csfloat.com/api/v1/trades/bulk/cancel",
@@ -490,6 +492,7 @@ func (response *BulkListResponse) responseBody() any {
 func (api *API) BulkList(items ...ListRequest) (*BulkListResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyBulkList,
 		api.httpClient,
 		http.MethodPost,
 		"https://csfloat.com/api/v1/listings/bulk-list",
@@ -507,6 +510,7 @@ func (api *API) BulkUnlist(listingId ...string) (*GenericResponse, error) {
 	if len(listingId) == 1 {
 		return handleRequest(
 			api,
+			RatelimitKeyUnlist,
 			api.httpClient,
 			http.MethodDelete,
 			"https://csfloat.com/api/v1/listings/"+listingId[0],
@@ -519,6 +523,7 @@ func (api *API) BulkUnlist(listingId ...string) (*GenericResponse, error) {
 
 	return handleRequest(
 		api,
+		RatelimitKeyBulkUnlist,
 		api.httpClient,
 		http.MethodPatch,
 		"https://csfloat.com/api/v1/listings/bulk-delist",
@@ -542,6 +547,7 @@ func (response *UnlistResponse) responseBody() any {
 func (api *API) Unlist(listingId string) (*UnlistResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyUnlist,
 		api.httpClient,
 		http.MethodDelete,
 		"https://csfloat.com/api/v1/listings/"+listingId,
@@ -586,6 +592,7 @@ func (api *API) UpdateListing(id string, payload UpdateListingRequest) (*UpdateL
 func (api *API) updateListing(listingId string, payload any) (*UpdateListingResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyUpdateListing,
 		api.httpClient,
 		http.MethodPatch,
 		"https://csfloat.com/api/v1/listings/"+listingId,
@@ -731,6 +738,7 @@ func (api *API) Trades(payload TradesRequest) (*TradesResponse, error) {
 
 	return handleRequest(
 		api,
+		RatelimitKeyGetTrades,
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/me/trades",
@@ -773,6 +781,7 @@ func (api *API) History(payload HistoryRequestPayload) (*HistoryResponse, error)
 
 	return handleRequest(
 		api,
+		RatelimitKeyGetHistory,
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/history/"+url.QueryEscape(payload.MarketHashName)+"/sales",
@@ -799,6 +808,7 @@ type BuyRequestPayload struct {
 func (api *API) Buy(payload BuyRequestPayload) (*BuyResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyBuy,
 		api.httpClient,
 		http.MethodPost,
 		"https://csfloat.com/api/v1/listings/buy",
@@ -812,6 +822,7 @@ func (api *API) Buy(payload BuyRequestPayload) (*BuyResponse, error) {
 func (api *API) Unwatch(listingId string) (*GenericResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyUnwatch,
 		api.httpClient,
 		http.MethodDelete,
 		"https://csfloat.com/api/v1/listings/"+listingId+"/watchlist",
@@ -825,6 +836,7 @@ func (api *API) Unwatch(listingId string) (*GenericResponse, error) {
 func (api *API) Watch(listingId string) (*GenericResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyWatch,
 		api.httpClient,
 		http.MethodPost,
 		"https://csfloat.com/api/v1/listings/"+listingId+"/watchlist",
@@ -876,6 +888,7 @@ func (api *API) ItemBuyOrders(item *Item) (*ItemBuyOrdersResponse, error) {
 
 	return handleRequest(
 		api,
+		RatelimitKeyGetItemBuyOrders,
 		api.httpClient,
 		method,
 		url,
@@ -898,6 +911,7 @@ func (api *API) SimpleItemBuyOrders(item *Item) (*SimpleItemBuyOrdersResponse, e
 
 	return handleRequest(
 		api,
+		RatelimitKeyGetSimpleItemBuyOrders,
 		api.httpClient,
 		method,
 		url,
@@ -911,6 +925,7 @@ func (api *API) SimpleItemBuyOrders(item *Item) (*SimpleItemBuyOrdersResponse, e
 func (api *API) ListingBuyOrders(listingId string, limit int64) (*ItemBuyOrdersResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyGetListingBuyOrders,
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/listings/"+listingId+"/buy-orders",
@@ -933,6 +948,7 @@ func (response *SimilarResponse) responseBody() any {
 func (api *API) Similar(listingId string) (*SimilarResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyGetSimilar,
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/listings/"+listingId+"/similar",
@@ -1074,6 +1090,7 @@ func (api *API) Transactions(payload TransactionsRequest) (*TransactionsResponse
 
 	return handleRequest(
 		api,
+		RatelimitKeyGetTransactions,
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/me/transactions",
@@ -1096,6 +1113,7 @@ func (response *ListResponse) responseBody() any {
 func (api *API) List(payload ListRequest) (*ListResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyCreateListing,
 		api.httpClient,
 		http.MethodPost,
 		"https://csfloat.com/api/v1/listings",
@@ -1166,6 +1184,7 @@ func (api *API) Listings(query ListingsRequest) (*ListingsResponse, error) {
 
 	return handleRequest(
 		api,
+		RatelimitKeyGetListings,
 		api.httpClient,
 		http.MethodGet,
 		"https://csfloat.com/api/v1/listings",
@@ -1194,6 +1213,7 @@ func (response *CreateSimpleBuyOrderResponse) responseBody() any {
 func (api *API) CreateSimpleBuyOrder(payload CreateSimpleBuyOrderPayload) (*CreateSimpleBuyOrderResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyCreateBuyOrder,
 		api.httpClient,
 		http.MethodPost,
 		"https://csfloat.com/api/v1/buy-orders",
@@ -1207,6 +1227,7 @@ func (api *API) CreateSimpleBuyOrder(payload CreateSimpleBuyOrderPayload) (*Crea
 func (api *API) DeleteBuyOrder(id string) (*GenericResponse, error) {
 	return handleRequest(
 		api,
+		RatelimitKeyDeleteBuyOrder,
 		api.httpClient,
 		http.MethodDelete,
 		"https://csfloat.com/api/v1/buy-orders/"+id,
