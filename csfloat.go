@@ -50,10 +50,13 @@ func NewWithHTTPClient(apiKey string, client *http.Client) *API {
 
 func New(apiKey string) *API {
 	dialer := &net.Dialer{
-		Timeout: 15 * time.Second,
+		Timeout:   15 * time.Second,
+		KeepAlive: 90 * time.Second,
 	}
 	transport := &http.Transport{
 		DialContext:           dialer.DialContext,
+		MaxIdleConns:          2,
+		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   3 * time.Second,
 		ResponseHeaderTimeout: 15 * time.Second,
 		ExpectContinueTimeout: 3 * time.Second,
