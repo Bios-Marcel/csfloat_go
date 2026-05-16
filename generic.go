@@ -80,11 +80,19 @@ func handleRequest[T Response](
 		return result, fmt.Errorf("error sending request: %w", err)
 	}
 
+	if response.Body != nil {
+		// Make sure the connection is reusable by draining and closing the body.
+		defer response.Body.Close()
+		defer func() {
+			// If the body was already read, this SHOULD be a no-op.
+			io.Copy(io.Discard, response.Body)
+		}()
+	}
+
 	ratelimits, err := ratelimitsFrom(response)
 	if err != nil {
 		var bodyText string
 		if response.Body != nil {
-			defer response.Body.Close()
 			bytes, err := io.ReadAll(response.Body)
 			if err != nil {
 				bodyText = "error reading body"
