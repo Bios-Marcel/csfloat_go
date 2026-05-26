@@ -275,7 +275,10 @@ type Category uint
 const (
 	Normal   = 1
 	StatTrak = 2
+	// Souvenir means has souvenir stickers and can't be stattrak.
 	Souvenir = 3
+	// Highlight is a bit special, as it doesn't actually apply to weapons, but highlight charm souvenir crates.
+	Highlight = 4
 )
 
 type SortListingsBy string
@@ -296,7 +299,7 @@ type ListingsRequest struct {
 	//ExcludeRare true causes min_ref_qty to be set to 20, just like on the CSFloat page.
 	ExcludeRare        bool
 	MinRefQuantity     uint
-	Category           Category
+	Categories         []Category
 	SortBy             SortListingsBy
 	DefIndex           uint
 	StickerIndex       uint
@@ -1154,8 +1157,9 @@ func (api *API) Listings(query ListingsRequest) (*ListingsResponse, error) {
 	if len(query.PaintSeed) > 0 {
 		form.Set("paint_seed", concatInts(query.PaintSeed...))
 	}
-	if query.Category > 0 {
-		form.Set("category", strconv.FormatUint(uint64(query.Category), 10))
+	if len(query.Categories) > 0 {
+		// Since mid-may it supports multi value
+		form.Set("category", concatInts(query.Categories...))
 	}
 	if query.MinPrice > 0 {
 		form.Set("min_price", strconv.Itoa(query.MinPrice))

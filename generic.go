@@ -132,7 +132,7 @@ func handleRequest[T Response](
 	return result, nil
 }
 
-func concatInts[Number int | uint](n ...Number) string {
+func concatInts[Number ~int | ~uint](n ...Number) string {
 	var b strings.Builder
 	for i, val := range n {
 		if i != 0 {
