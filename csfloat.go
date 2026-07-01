@@ -1129,7 +1129,7 @@ func (api *API) List(payload ListRequest) (*ListResponse, error) {
 
 type ListingsResponse struct {
 	GenericResponse
-	Data []ActiveListing `json:"data"`
+	Data []*ActiveListing `json:"data"`
 }
 
 func (response *ListingsResponse) responseBody() any {
