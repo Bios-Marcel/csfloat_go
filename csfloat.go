@@ -671,8 +671,9 @@ const (
 )
 
 type SteamOffer struct {
-	State  int       `json:"state"`
-	SentAt time.Time `json:"sent_at"`
+	State     int       `json:"state"`
+	SentAt    time.Time `json:"sent_at,omitzero"`
+	UpdatedAt time.Time `json:"updated_at,omitzero"`
 }
 
 type Trade struct {
@@ -685,17 +686,26 @@ type Trade struct {
 	CreatedAt time.Time `json:"created_at"`
 	// AcceptedAt, is the time where the trade accepted the trade on CSFloat.
 	AcceptedAt time.Time `json:"accepted_at,omitzero"`
-	// CURRENTLY UNUSED
-	// SteamOffer SteamOffer `json:"steam_offer"`
-	// TradeProtectionEndsAt is the time at which the Steam trade protection
-	// ends. Only after this, we can verify.
-	TradeProtectionEndsAt time.Time `json:"trade_protection_ends_at,omitzero"`
+	// tradeProtectionEndsAt is NOT correct anymore. Steam has changed the behaviour
+	// to be 7 days starting the hour the trade was accepted (rounded up to the next full hour).
+	// So instead we calculate it from the SteamOffer.
+	tradeProtectionEndsAt time.Time `json:"-"`
 	// VerifySaleAt is the time after which the traede protection runs out.
 	VerifySaleAt time.Time `json:"verify_sale_at,omitzero"`
 	// VerifiedAt is the time at which escrow ended.
 	VerifiedAt       time.Time        `json:"verified_at,omitzero"`
+	SteamOffer       SteamOffer       `json:"steam_offer,omitzero"`
 	State            TradeState       `json:"state"`
 	VerificationMode VerificationMode `json:"verification_mode,omitempty"`
+}
+
+func (trade Trade) TradeProtectionEndsAt() time.Time {
+	if trade.tradeProtectionEndsAt.IsZero() && !trade.SteamOffer.UpdatedAt.IsZero() {
+		trade.tradeProtectionEndsAt = trade.SteamOffer.UpdatedAt.
+			Add(7*24*time.Hour + time.Hour).
+			Truncate(time.Hour)
+	}
+	return trade.tradeProtectionEndsAt
 }
 
 type TradesResponse struct {
