@@ -64,9 +64,11 @@ func New(apiKey string) *API {
 }
 
 type Stall struct {
-	Items      []ActiveListing `json:"data"`
-	Count      int             `json:"total_count"`
-	TotalPrice uint            `json:"total_price"`
+	Items []ActiveListing `json:"data"`
+	Count int             `json:"total_count"`
+	// Cursor determines where the next page starts.
+	Cursor     string `json:"cursor"`
+	TotalPrice uint   `json:"total_price"`
 }
 
 type ListingType string
@@ -343,18 +345,27 @@ func (response *StallResponse) responseBody() any {
 	return &response.Stall
 }
 
-func (api *API) Stall(steamId string) (*StallResponse, error) {
+type StallRequest struct {
+	SteamID string
+	Cursor  string
+}
+
+func (api *API) Stall(request StallRequest) (*StallResponse, error) {
+	urlValues := url.Values{
+		"limit": []string{"40"},
+	}
+	if request.Cursor != "" {
+		urlValues.Set("cursor", request.Cursor)
+	}
 	return handleRequest(
 		api,
 		RatelimitKeyGetStall,
 		api.httpClient,
 		http.MethodGet,
-		"https://csfloat.com/api/v1/users/"+steamId+"/stall",
+		"https://csfloat.com/api/v1/users/"+request.SteamID+"/stall",
 		api.apiKey,
 		nil,
-		url.Values{
-			"limit": []string{"40"},
-		},
+		urlValues,
 		&StallResponse{},
 	)
 }
